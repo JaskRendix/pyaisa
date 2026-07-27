@@ -6,29 +6,15 @@ build-backend = "maturin"
 name = "pyaisa"
 version = "1.0.0"
 description = "ISA Model computed in Rust using PyO3"
-authors = [
-    { name = "Giorgio"}
-]
+authors = [{ name = "Giorgio" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.12"
 
-packages = ["pyaisa"]
-
-dependencies = [
-    "numpy",
-]
-
-# Only ship the Python package — NOT Rust source, NOT static assets
-include = [
-    "pyaisa/**",
-]
+dependencies = ["numpy"]
 
 [project.optional-dependencies]
-test = [
-    "pytest",
-    "pytest-cov",
-]
+test = ["pytest", "pytest-cov"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=pyaisa --cov-report=term-missing"

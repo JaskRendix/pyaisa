@@ -1,9 +1,3 @@
-"""
-Copyright (c) Pyaisa 2015  - Alberto Lorenzo
-Copyright (c) Pyaisa 2026  - Giorgio
-Distributed under the MIT License.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -13,7 +7,9 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from pyaisa._core import ISA as RustISA
-from pyaisa._core import (
+from pyaisa.constants import isa_params
+
+from .functions import (
     altitude_to_fl,
     cas_to_eas,
     density_altitude,
@@ -57,15 +53,9 @@ from pyaisa._core import (
     wind_loglaw_displaced,
     wind_power_law,
 )
-from pyaisa.constants import isa_params
 
 
 class ISA:
-    """
-    Python wrapper around the Rust ISA class.
-    Provides a clean, modern interface for atmospheric queries.
-    """
-
     _allow_refresh: bool
     _params: dict
     _isa: RustISA
@@ -346,24 +336,3 @@ class ISA:
     def mach_from_tas(self, h: float, tas: float) -> float:
         a = self.speed_of_sound(h)
         return mach_from_tas(tas, a)
-
-
-def build_atm(**kwargs) -> Callable[[ArrayLike, float], tuple]:
-    base = ISA(**kwargs)
-
-    def atm(
-        h: ArrayLike, dT: float = 0.0
-    ) -> (
-        tuple[float, float, float]
-        | tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
-    ):
-        if dT != 0.0:
-            params = base.params.copy()
-            params["T0"] += dT
-            return ISA(**params).atm(h)
-        return base.atm(h)
-
-    return atm
-
-
-atm = build_atm()

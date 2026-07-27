@@ -4,4 +4,7 @@ Copyright (c) Pyaisa 2026  - Giorgio
 Distributed under the MIT License.
 """
 
-from .isa import ISA, atm, build_atm
+from .isa.core import ISA
+from .isa.factory import build_atm
+
+atm = build_atm()

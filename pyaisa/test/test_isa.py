@@ -4,7 +4,7 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert
 
 from pyaisa import atm, build_atm
 from pyaisa._core import geometric_to_geopotential, geopotential_to_geometric
-from pyaisa.isa import ISA
+from pyaisa.isa.core import ISA
 
 
 @pytest.mark.parametrize(
