@@ -1,0 +1,22 @@
+[package]
+name = "pyaisa-core"
+version = "0.1.0"
+edition = "2021"
+description = "Rust implementation of the Pyaisa ISA model with PyO3 bindings"
+license = "MIT"
+
+[lib]
+name = "_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.21", features = ["extension-module"] }
+numpy = "0.21"
+rayon = "1.10"
+
+[build-dependencies]
+pyo3-build-config = "0.21"
+
+[package.metadata.maturin]
+name = "pyaisa._core"
+python-source = "pyaisa"

@@ -1,0 +1,25 @@
+# Rust build artifacts
+target/
+Cargo.lock
+
+# Python extension module produced by maturin
+pyaisa/_core*.so
+
+# Python caches
+__pycache__/
+pyaisa/__pycache__/
+pyaisa/test/__pycache__/
+
+# Virtual environment
+.venv/
+
+# pytest cache
+.pytest_cache/
+.coverage
+
+# Build directories (Python packaging)
+build/
+dist/
+
+# macOS junk
+.DS_Store

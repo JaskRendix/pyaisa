@@ -1,0 +1,204 @@
+import numpy as np
+import pytest
+from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert_equal
+
+from pyaisa import atm, build_atm
+from pyaisa._core import geopotential_to_geometric
+from pyaisa.constants import isa_params
+from pyaisa.isa import ISA
+
+
+@pytest.mark.parametrize(
+    "h, expected_T, expected_p, expected_rho",
+    [
+        (0.0, 288.15, 101325.0, 1.2250),
+        (50.0, 287.825, 100720.0, 1.2191),
+        (550.0, 284.575, 94890.0, 1.1616),
+    ],
+)
+def test_scalar_values(h, expected_T, expected_p, expected_rho):
+    T, p, rho = atm(h)
+    assert_almost_equal(T, expected_T, decimal=3)
+    assert_almost_equal(p, expected_p, decimal=-1)
+    assert_almost_equal(rho, expected_rho, decimal=4)
+
+
+def test_scalar_output_types():
+    T, p, rho = atm(0.0)
+    assert isinstance(T, float)
+    assert isinstance(p, float)
+    assert isinstance(rho, float)
+
+
+@pytest.mark.parametrize(
+    "h",
+    [
+        np.zeros(5),
+        np.linspace(0, 11000, 10),
+        np.array([0.0, 100.0, 500.0, 1000.0]),
+    ],
+)
+def test_array_output_shapes(h):
+    T, p, rho = atm(h)
+    assert_equal(len(T), len(h))
+    assert_equal(len(p), len(h))
+    assert_equal(len(rho), len(h))
+
+
+def test_warning_for_out_of_range(recwarn):
+    atm(-1.0)
+    w = recwarn.pop(RuntimeWarning)
+    assert issubclass(w.category, RuntimeWarning)
+
+
+def test_nan_for_out_of_range_array():
+    h = np.array([-1.0, 0.0])
+    T, p, rho = atm(h)
+    assert np.isnan(T[0])
+    assert np.isnan(p[0])
+    assert np.isnan(rho[0])
+    assert not np.isnan(T[1])
+
+
+@pytest.mark.parametrize(
+    "h",
+    [
+        11000.0,
+        20000.0,
+        32000.0,
+    ],
+)
+def test_layer_boundaries(h):
+    T, p, rho = atm(h)
+    assert isinstance(T, float)
+    assert isinstance(p, float)
+    assert isinstance(rho, float)
+    assert not np.isnan(T)
+
+
+def test_results_under_11km():
+    h = np.array([0.0, 50.0, 550.0, 6500.0, 10000.0, 11000.0])
+    expected_T = np.array([288.150, 287.825, 284.575, 245.900, 223.150, 216.650])
+    expected_p = np.array([101325.0, 100720.0, 94890.0, 44034.0, 26436.0, 22632.0])
+    expected_rho = np.array([1.2250, 1.2191, 1.1616, 0.62384, 0.41271, 0.36392])
+
+    T, p, rho = atm(h)
+    assert_array_almost_equal(T, expected_T, decimal=3)
+    assert_array_almost_equal(p, expected_p, decimal=-1)
+    assert_array_almost_equal(rho, expected_rho, decimal=4)
+
+
+def test_results_under_20km():
+    h = np.array([12000, 14200, 17500, 20000])
+    expected_T = np.array([216.650, 216.650, 216.650, 216.650])
+    expected_p = np.array([19330.0, 13663.0, 8120.5, 5474.8])
+    expected_rho = np.array([0.31083, 0.21971, 0.13058, 0.088035])
+
+    T, p, rho = atm(h)
+    assert_array_almost_equal(T, expected_T, decimal=3)
+    assert_array_almost_equal(p, expected_p, decimal=0)
+    assert_array_almost_equal(rho, expected_rho, decimal=5)
+
+
+def test_results_under_32km():
+    h = np.array([22100, 24000, 28800, 32000])
+    expected_T = np.array([218.750, 220.650, 225.450, 228.650])
+    expected_p = np.array([3937.7, 2930.4, 1404.8, 868.01])
+    expected_rho = np.array([0.062711, 0.046267, 0.021708, 0.013225])
+
+    T, p, rho = atm(h)
+    assert_array_almost_equal(T, expected_T, decimal=3)
+    assert_array_almost_equal(p, expected_p, decimal=1)
+    assert_array_almost_equal(rho, expected_rho, decimal=5)
+
+
+def test_isa_object_scalar():
+    isa = ISA()
+    T, p, rho = isa.atm(0.0)
+    assert_equal(T, 288.15)
+    assert_equal(p, 101325.0)
+
+
+def test_isa_object_array():
+    isa = ISA()
+    h = np.array([0.0, 100.0])
+    T, p, rho = isa.atm(h)
+    assert_equal(len(T), 2)
+    assert_equal(len(p), 2)
+    assert_equal(len(rho), 2)
+
+
+def test_build_atm_default():
+    f = build_atm()
+    T, p, rho = f(0.0)
+    assert_equal(T, 288.15)
+
+
+def test_build_atm_temperature_offset():
+    f = build_atm(T0=288.15)
+    T0 = f(0.0, dT=10.0)[0]
+    assert_equal(T0, 298.15)
+
+
+def test_isa_params_layers_validation():
+    params = isa_params()
+    with pytest.raises(ValueError):
+        params["layers"] = {"h": np.array([0.0, 1.0]), "a": np.array([0.0, 0.0])}
+
+
+def test_isa_params_callback():
+    called = []
+
+    def cb():
+        called.append(True)
+
+    params = isa_params(callback=cb)
+    params["R"] = 300.0
+    assert called
+
+
+@pytest.mark.parametrize("psize", [-1, 0])
+def test_parallel_modes(psize):
+    isa = ISA(psize=psize)
+    h = np.linspace(0, 11000, 100)
+    T, p, rho = isa.atm(h)
+    assert_equal(len(T), 100)
+
+
+def test_geopotential_matches_geometric():
+    isa = ISA()
+    H = 11000.0
+    h = geopotential_to_geometric(H)
+
+    T1, p1, rho1 = isa.atm_geopotential(H)
+    T2, p2, rho2 = isa.atm(h)
+
+    assert_almost_equal(T1, T2)
+    assert_almost_equal(p1, p2)
+    assert_almost_equal(rho1, rho2)
+
+
+def test_moist_air_density_lower_than_dry():
+    isa = ISA()
+    h = 5000.0
+
+    T, p, rho_dry = isa.atm(h)
+    Tm, pm, rho_moist = isa.atm_moist(h, rh=0.8)
+
+    assert rho_moist < rho_dry
+
+
+def test_isa_deviation_temperature():
+    isa = ISA()
+    T0, _, _ = isa.atm(0)
+    T1, _, _ = isa.atm_deviation(0, dT=10)
+
+    assert_almost_equal(T1, T0 + 10)
+
+
+def test_layer_introspection():
+    isa = ISA()
+
+    assert isa.layer_at(0) == 0
+    assert isa.layer_at(15000) == 1
+    assert isa.layer_at(30000) == 2
