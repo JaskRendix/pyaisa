@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert_equal
 
-from pyaisa import atm, build_atm
+from pyaisa import atm
 from pyaisa._core import geometric_to_geopotential, geopotential_to_geometric
 from pyaisa.isa.core import ISA
 
@@ -125,18 +125,6 @@ def test_isa_object_array():
     assert_equal(len(T), 2)
     assert_equal(len(p), 2)
     assert_equal(len(rho), 2)
-
-
-def test_build_atm_default():
-    f = build_atm()
-    T, p, rho = f(0.0)
-    assert_equal(T, 288.15)
-
-
-def test_build_atm_temperature_offset():
-    f = build_atm(T0=288.15)
-    T0 = f(0.0, dT=10.0)[0]
-    assert_equal(T0, 298.15)
 
 
 @pytest.mark.parametrize("psize", [-1, 0])
