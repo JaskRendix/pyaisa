@@ -15,9 +15,12 @@ from numpy.typing import ArrayLike
 from pyaisa._core import ISA as RustISA
 from pyaisa._core import (
     altitude_to_fl,
+    cas_to_eas,
     density_altitude,
     dew_point,
     dynamic_pressure,
+    dynamic_viscosity_sutherland,
+    eas_to_tas,
     fl_to_altitude,
     freezing_fraction,
     geometric_to_fl,
@@ -26,17 +29,25 @@ from pyaisa._core import (
     gust,
     icing_severity,
     indicated_altitude,
+    kinematic_viscosity,
     lwc,
     mach,
+    mach_from_tas,
     mixing_ratio,
     moist_air_density,
     moist_lapse_rate,
     moist_speed_of_sound,
     potential_temperature,
+    prandtl_glauert,
     pressure_altitude,
+    reynolds_number,
     saturation_vapor_pressure,
     speed_of_sound,
+    stagnation_entropy,
+    stagnation_pressure,
+    stagnation_temperature,
     supercooled_fraction,
+    tas_to_eas,
     vapor_pressure,
     virtual_temperature,
     wet_bulb_temperature,
@@ -273,6 +284,57 @@ class ISA:
 
     def geometric_to_geopotential(self, h: float) -> float:
         return geometric_to_geopotential(h)
+
+    def viscosity(self, h: float):
+        """Return dynamic + kinematic viscosity at altitude h."""
+        T, _, rho = self.atm(h)
+        mu = dynamic_viscosity_sutherland(T)
+        nu = kinematic_viscosity(mu, rho)
+        return mu, nu
+
+    def reynolds(self, h: float, V: float, L: float):
+        """Reynolds number at altitude h for speed V and length L."""
+        _, _, rho = self.atm(h)
+        mu = dynamic_viscosity_sutherland(self.atm(h)[0])
+        return reynolds_number(rho, V, L, mu)
+
+    def stagnation(self, h: float, V: float):
+        """Return stagnation temperature and pressure at altitude h."""
+        T, p, _ = self.atm(h)
+        M = mach(V, speed_of_sound(T))
+        return (
+            stagnation_temperature(T, M),
+            stagnation_pressure(p, M),
+            stagnation_entropy(T, p),
+        )
+
+    def compressibility(self, h: float, V: float):
+        """Prandtl–Glauert compressibility correction."""
+        M = self.mach(h, V)
+        return prandtl_glauert(M)
+
+    def tas_to_eas(self, h: float, tas: float):
+        """Convert TAS → EAS at altitude h."""
+        _, _, rho = self.atm(h)
+        rho0 = 1.225  # ISA sea-level density
+        return tas_to_eas(tas, rho, rho0)
+
+    def eas_to_tas(self, h: float, eas: float):
+        """Convert EAS → TAS at altitude h."""
+        _, _, rho = self.atm(h)
+        rho0 = 1.225
+        return eas_to_tas(eas, rho, rho0)
+
+    def cas_to_eas(self, cas: float):
+        """Convert CAS → EAS (compressible)."""
+        p0 = 101325.0
+        rho0 = 1.225
+        return cas_to_eas(cas, p0, rho0)
+
+    def mach_from_tas(self, h: float, tas: float):
+        """Mach number from TAS at altitude h."""
+        a = self.speed_of_sound(h)
+        return mach_from_tas(tas, a)
 
 
 def build_atm(**kwargs) -> Callable[[ArrayLike, float], tuple]:

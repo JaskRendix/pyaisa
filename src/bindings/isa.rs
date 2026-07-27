@@ -26,7 +26,7 @@ pub struct ISA {
     params: Py<PyDict>,
 }
 
-// Rust-only methods (not exposed to Python)
+// Rust-only accessor
 impl ISA {
     pub fn core(&self) -> &IsaCore {
         &self.core
@@ -47,15 +47,13 @@ impl ISA {
             .unwrap_or(101325.0);
         let psize = kwargs.map(|k| get_usize(k, "psize", 1000)).unwrap_or(1000);
 
-        let layers: Option<Bound<'_, PyDict>> = if let Some(k) = kwargs {
-            if let Some(obj) = k.get_item("layers").ok().flatten() {
-                obj.downcast::<PyDict>().ok().map(|d| d.clone())
-            } else {
-                None
-            }
-        } else {
-            None
-        };
+        // Optional custom layers
+        let layers: Option<Bound<'_, PyDict>> = kwargs.and_then(|k| {
+            k.get_item("layers")
+                .ok()
+                .flatten()
+                .and_then(|obj| obj.downcast::<PyDict>().ok().map(|d| d.clone()))
+        });
 
         let (hl, al) = if let Some(ld) = layers {
             let h_any = ld
@@ -70,6 +68,7 @@ impl ISA {
 
             (h_arr.to_vec()?, a_arr.to_vec()?)
         } else {
+            // ICAO ISA default layers
             (
                 vec![0.0, 11000.0, 20000.0, 32000.0],
                 vec![-0.0065, 0.0, 0.001],
@@ -90,19 +89,21 @@ impl ISA {
         self.params.clone_ref(py)
     }
 
+    /// Forward atmosphere lookup
     fn atm(&self, py: Python, h: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+        // Scalar
         if let Ok(val) = h.extract::<f64>() {
             if let Some((t, p, rho)) = self.core.atm_scalar(val) {
                 return Ok(PyTuple::new_bound(py, &[t, p, rho]).unbind().into());
-            } else {
-                let warnings = py.import_bound("warnings")?;
-                warnings.call_method1("warn", ("Altitude value outside range",))?;
-                return Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
-                    .unbind()
-                    .into());
             }
+            let warnings = py.import_bound("warnings")?;
+            warnings.call_method1("warn", ("Altitude value outside range",))?;
+            return Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
+                .unbind()
+                .into());
         }
 
+        // Vector
         if let Ok(arr) = h.extract::<&PyArray1<f64>>() {
             let hs = unsafe { arr.as_slice()? };
             let (t, p, rho, error) = self.core.atm_vec(hs);
@@ -129,6 +130,7 @@ impl ISA {
         ))
     }
 
+    /// Deviated atmosphere lookup
     fn atm_deviation(
         &self,
         py: Python,
@@ -137,18 +139,19 @@ impl ISA {
         dp: f64,
         drho: f64,
     ) -> PyResult<PyObject> {
+        // Scalar
         if let Ok(val) = h.extract::<f64>() {
             if let Some((t, p, rho)) = self.core.atm_deviation_scalar(val, d_t, dp, drho) {
                 return Ok(PyTuple::new_bound(py, &[t, p, rho]).unbind().into());
-            } else {
-                let warnings = py.import_bound("warnings")?;
-                warnings.call_method1("warn", ("Altitude value outside range",))?;
-                return Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
-                    .unbind()
-                    .into());
             }
+            let warnings = py.import_bound("warnings")?;
+            warnings.call_method1("warn", ("Altitude value outside range",))?;
+            return Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
+                .unbind()
+                .into());
         }
 
+        // Vector
         if let Ok(arr) = h.extract::<&PyArray1<f64>>() {
             let hs = unsafe { arr.as_slice()? };
             let (t, p, rho, error) = self.core.atm_deviation_vec(hs, d_t, dp, drho);

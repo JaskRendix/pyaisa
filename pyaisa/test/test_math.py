@@ -4,24 +4,35 @@ import pytest
 from pyaisa import atm
 from pyaisa._core import (
     altitude_to_fl,
+    cas_to_eas,
     density_altitude,
     dew_point,
     dynamic_pressure,
+    dynamic_viscosity_sutherland,
+    eas_to_tas,
     fl_to_altitude,
     freezing_fraction,
     geometric_to_fl,
     gust,
     icing_severity,
     indicated_altitude,
+    kinematic_viscosity,
     lwc,
     mach,
+    mach_from_tas,
     mixing_ratio,
     moist_lapse_rate,
     potential_temperature,
+    prandtl_glauert,
     pressure_altitude,
+    reynolds_number,
     saturation_vapor_pressure,
     speed_of_sound,
+    stagnation_entropy,
+    stagnation_pressure,
+    stagnation_temperature,
     supercooled_fraction,
+    tas_to_eas,
     vapor_pressure,
     virtual_temperature,
     wet_bulb_temperature,
@@ -304,3 +315,86 @@ def test_icing_severity_range():
 def test_freezing_fraction_matches_supercooled():
     T = 260.0
     assert pytest.approx(freezing_fraction(T), rel=1e-6) == supercooled_fraction(T)
+
+
+def test_dynamic_viscosity_sutherland():
+    T = 300.0
+    expected = 1.846e-5
+    assert pytest.approx(dynamic_viscosity_sutherland(T), rel=1e-3) == expected
+
+
+def test_kinematic_viscosity():
+    mu = 1.8e-5
+    rho = 1.225
+    expected = mu / rho
+    assert pytest.approx(kinematic_viscosity(mu, rho), rel=1e-6) == expected
+
+
+def test_reynolds_number():
+    rho = 1.225
+    V = 50.0
+    L = 1.0
+    mu = 1.8e-5
+    expected = rho * V * L / mu
+    assert pytest.approx(reynolds_number(rho, V, L, mu), rel=1e-6) == expected
+
+
+def test_stagnation_temperature():
+    T = 288.15
+    M = 0.8
+    expected = T * (1 + 0.2 * M * M)
+    assert pytest.approx(stagnation_temperature(T, M), rel=1e-6) == expected
+
+
+def test_stagnation_pressure():
+    p = 90000.0
+    M = 0.8
+    gamma = 1.4
+    expected = p * (1 + 0.2 * M * M) ** (gamma / (gamma - 1))
+    assert pytest.approx(stagnation_pressure(p, M), rel=1e-6) == expected
+
+
+def test_stagnation_entropy():
+    T = 288.15
+    p = 90000.0
+    R = 287.05287
+    cp = 1004.685
+    expected = cp * np.log(T) - R * np.log(p)
+    assert pytest.approx(stagnation_entropy(T, p), rel=1e-6) == expected
+
+
+def test_prandtl_glauert():
+    M = 0.7
+    expected = 1.0 / np.sqrt(1 - M * M)
+    assert pytest.approx(prandtl_glauert(M), rel=1e-6) == expected
+
+
+def test_eas_to_tas_and_back():
+    eas = 100.0
+    rho = 0.9
+    rho0 = 1.225
+
+    tas = eas_to_tas(eas, rho, rho0)
+    eas2 = tas_to_eas(tas, rho, rho0)
+
+    assert pytest.approx(eas2, rel=1e-6) == eas
+
+
+def test_cas_to_eas_monotonic():
+    cas_low = 100.0
+    cas_high = 150.0
+    p0 = 101325.0
+    rho0 = 1.225
+
+    eas_low = cas_to_eas(cas_low, p0, rho0)
+    eas_high = cas_to_eas(cas_high, p0, rho0)
+
+    assert eas_high > eas_low
+
+
+def test_mach_from_tas():
+    T = 288.15
+    a = speed_of_sound(T)
+    tas = a * 0.8
+    expected = 0.8
+    assert pytest.approx(mach_from_tas(tas, a), rel=1e-6) == expected
