@@ -271,6 +271,9 @@ class ISA:
         T, _, _ = self.atm(h)
         return freezing_fraction(T)
 
+    def geometric_to_geopotential(self, h: float) -> float:
+        return geometric_to_geopotential(h)
+
 
 def build_atm(**kwargs) -> Callable[[ArrayLike, float], tuple]:
     base = ISA(**kwargs)

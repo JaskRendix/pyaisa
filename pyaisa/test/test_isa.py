@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert_equal
 
 from pyaisa import atm, build_atm
-from pyaisa._core import geopotential_to_geometric
+from pyaisa._core import geometric_to_geopotential, geopotential_to_geometric
 from pyaisa.constants import isa_params
 from pyaisa.isa import ISA
 
@@ -202,3 +202,20 @@ def test_layer_introspection():
     assert isa.layer_at(0) == 0
     assert isa.layer_at(15000) == 1
     assert isa.layer_at(30000) == 2
+
+
+@pytest.mark.parametrize("h", [0.0, 5000.0, 11000.0, 15000.0, 30000.0])
+def test_geopotential_geometric_roundtrip_and_atm(h):
+    isa = ISA()
+
+    H = geometric_to_geopotential(h)
+    h2 = geopotential_to_geometric(H)
+
+    assert_almost_equal(h2, h, decimal=6)
+
+    T1, p1, rho1 = isa.atm_geopotential(H)
+    T2, p2, rho2 = isa.atm(h)
+
+    assert_almost_equal(T1, T2)
+    assert_almost_equal(p1, p2)
+    assert_almost_equal(rho1, rho2)
