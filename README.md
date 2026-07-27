@@ -1,11 +1,8 @@
 # Pyaisa
 
-Pyaisa is a compact implementation of the International Standard Atmosphere (ISA).  
+Pyaisa implements the International Standard Atmosphere (ISA) with a Rust core exposed through PyO3.  
 It provides temperature, pressure, and density as functions of altitude, following the COESA reference model.  
-The project began as an exercise in scientific programming and collaborative development.
-
-The original version used Python with a C++ OpenMP backend accessed through SWIG.  
-The current version replaces that backend with a Rust implementation exposed through PyO3, improving clarity, performance, and extensibility.
+The project originally used Python with a C++ backend and now uses Rust for clarity and extensibility.
 
 Repository: [https://github.com/newlawrence/Pyaisa](https://github.com/newlawrence/Pyaisa)
 
@@ -15,60 +12,63 @@ Repository: [https://github.com/newlawrence/Pyaisa](https://github.com/newlawren
 
 ### Core ISA Model
 - COESA‑based standard atmosphere  
-- Scalar or vector altitude inputs  
-- NumPy array outputs  
+- Scalar and vector altitude evaluation  
+- NumPy array support  
 - Configurable parameters (`R`, `g`, `T0`, `p0`, layer structure)  
-- Python wrapper around a Rust core  
-- Simple API: `ISA` object and `build_atm` function  
+- ISA object and `build_atm` constructor  
+- Geometric and geopotential altitude support  
 
-### Extended Atmosphere Physics
-Derived quantities used in aeronautics and atmospheric science:
+### Thermodynamics and Humidity
+Implemented in `thermo.rs`:
+
+- Saturation vapor pressure  
+- Vapor pressure  
+- Mixing ratio  
+- Dew point  
+- Virtual temperature  
+- Potential temperature  
+- Moist adiabatic lapse rate  
+- Wet‑bulb temperature  
+- Moist‑air density  
+- Moist‑air speed of sound  
+
+### Aerodynamic and Compressible‑Flow Quantities
+Implemented in `math.rs`:
 
 - Speed of sound  
 - Dynamic pressure  
 - Mach number  
-- Pressure altitude  
-- Density altitude  
-
-### Aerodynamic and Compressible‑Flow Physics
-Additional ISA‑derived quantities for performance analysis:
-
-- Dynamic viscosity (Sutherland’s law)  
+- Dynamic viscosity (Sutherland)  
 - Kinematic viscosity  
 - Reynolds number  
 - Stagnation temperature  
 - Stagnation pressure  
 - Stagnation entropy  
-- Prandtl–Glauert compressibility correction  
-- Airspeed conversions (CAS → EAS, EAS ↔ TAS, Mach from TAS)
-
-All functions are implemented in Rust and exposed directly to Python.
-
-### Humidity and Thermodynamics
-- Saturation vapor pressure  
-- Vapor pressure  
-- Mixing ratio  
-- Dew point temperature  
-- Virtual temperature  
-- Potential temperature  
-- Moist adiabatic lapse rate  
-- Wet‑bulb temperature  
+- Prandtl–Glauert factor  
+- Airspeed conversions (CAS→EAS, EAS↔TAS, Mach from TAS)
 
 ### Wind Models
+Implemented in `wind.rs`:
+
 - Log‑law wind profile  
 - Power‑law wind profile  
 - Displaced log‑law  
-- Linear shear profile  
+- Linear shear  
 - Ekman‑type rotation  
 - Gust factor  
 
-### Flight‑Level Conversions
-- Pressure altitude to flight level  
-- Flight level to pressure altitude  
-- Geometric altitude to flight level  
+### Flight‑Level and Altitude Conversions
+Implemented in `flight.rs`:
+
+- Pressure altitude  
+- Density altitude  
+- Geometric↔geopotential altitude  
+- Flight level conversions  
 - Indicated altitude with QNH correction  
 
 ### Icing Conditions
+Implemented in `icing.rs`:
+
 - Liquid water content  
 - Supercooled fraction  
 - Icing severity index  
@@ -76,7 +76,7 @@ All functions are implemented in Rust and exposed directly to Python.
 
 ---
 
-## New Capabilities
+## ISA Extensions
 
 ### Geopotential Altitude
 
@@ -88,13 +88,40 @@ geopotential_to_geometric(H)
 
 ### Moist‑Air ISA
 
+Moist‑air density at altitude is computed through:
+
 ```python
 isa.atm_moist(h, rh)
-isa.speed_of_sound_moist(h, rh)
-isa.dynamic_pressure_moist(h, V, rh)
 ```
 
-### ISA Deviation (ΔT, Δp, Δρ)
+This function evaluates the ISA at altitude `h`, then applies the thermodynamic moist‑air density model.
+
+Moist‑air speed of sound and moist dynamic pressure are computed at the Python layer using thermodynamic functions:
+
+- **moist speed of sound**  
+  ```python
+  isa.speed_of_sound_moist(h, rh)
+  ```
+
+- **moist dynamic pressure**  
+  ```python
+  isa.dynamic_pressure_moist(h, V, rh)
+  ```
+
+These functions use:
+
+- `moist_speed_of_sound(T, rh)`  
+- `dynamic_pressure(rho_m, V)`  
+
+with temperature and pressure obtained from:
+
+```python
+isa.atm(h)
+```
+
+Moist‑air extensions are implemented in Python using the thermodynamic functions exposed from Rust. Rust does not provide ISA‑level moist speed of sound or moist dynamic pressure.
+
+### ISA Deviations
 
 ```python
 isa.atm_deviation(h, dT=10)
@@ -107,23 +134,11 @@ isa.atm_deviation(h, dp=-500)
 isa.layer_at(15000)
 ```
 
-### Aerodynamic Quantities
-
-```python
-mu, nu = isa.viscosity(h)
-Re = isa.reynolds(h, V, L)
-T0, p0, s0 = isa.stagnation(h, V)
-beta = isa.compressibility(h, V)
-tas = isa.eas_to_tas(h, eas)
-eas = isa.tas_to_eas(h, tas)
-M = isa.mach_from_tas(h, tas)
-```
-
 ---
 
 ## Installation
 
-Editable mode with tests:
+Editable mode:
 
 ```
 pip install -e .[test]
@@ -145,7 +160,7 @@ pytest
 
 ---
 
-## Basic usage
+## Basic Usage
 
 ```python
 import pyaisa
@@ -155,7 +170,7 @@ isa.atm(0)
 isa.atm([0, 11000])
 ```
 
-### Modifying parameters
+### Modifying Parameters
 
 ```python
 new = pyaisa.ISA(R=300)
@@ -172,7 +187,7 @@ atm = pyaisa.build_atm(R=300, g=10)
 atm(11000)
 ```
 
-### Temperature offset
+### Temperature Offset
 
 ```python
 pyaisa.atm(0, 15)
@@ -181,9 +196,9 @@ pyaisa.atm(11000, 15)
 
 ---
 
-## Extended physics examples
+## Extended Physics Examples
 
-### Speed of sound and Mach number
+### Speed of Sound and Mach Number
 
 ```python
 T, p, rho = isa.atm(11000)
@@ -191,29 +206,30 @@ a = isa.speed_of_sound(11000)
 M = isa.mach(11000, V=250)
 ```
 
-### Density altitude
+### Density Altitude
 
 ```python
 da = isa.density_altitude(1500)
 ```
 
-### Humidity and dew point
+### Humidity and Dew Point
 
 ```python
 e = isa.vapor_pressure(0, rh=0.6)
 td = isa.dew_point(0, rh=0.6)
 ```
 
-### Wind profile
+### Wind Profile
 
 ```python
-u = isa.wind(z=50, z_ref=10, u_ref=5, z0=0.1)
+u = isa.wind_loglaw(z=50, z_ref=10, u_ref=5, z0=0.1)
 ```
 
-### Aerodynamic quantities
+### Aerodynamic Quantities
 
 ```python
-mu, nu = isa.viscosity(10000)
+mu = isa.dynamic_viscosity(10000)
+nu = isa.kinematic_viscosity(10000)
 Re = isa.reynolds(10000, V=200, L=1.0)
 T0, p0, s0 = isa.stagnation(10000, V=250)
 beta = isa.compressibility(10000, V=250)
@@ -224,5 +240,5 @@ tas = isa.eas_to_tas(10000, eas=120)
 
 ## Background
 
-Pyaisa originated from work done in the AeroPython group, where the ISA model served as an example for numerical methods and open‑source workflows.  
-This repository continues that effort and keeps the model readable, configurable, and compact, with a Rust backend and an extended set of atmospheric utilities.
+Pyaisa originated from work in the AeroPython group, where the ISA model was used for numerical methods and open‑source workflows.  
+This repository continues that effort with a Rust backend and an extended set of atmospheric utilities.
