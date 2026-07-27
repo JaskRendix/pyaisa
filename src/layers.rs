@@ -18,6 +18,11 @@ impl TLayer {
     pub fn eval(&self, h: f64) -> f64 {
         self.ts + self.a * (h - self.hs)
     }
+
+    #[inline]
+    pub fn lapse_rate(&self) -> f64 {
+        self.a
+    }
 }
 
 /// Pressure layer (isothermal or gradient)

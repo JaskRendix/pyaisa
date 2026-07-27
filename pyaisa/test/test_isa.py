@@ -189,3 +189,58 @@ def test_geopotential_geometric_roundtrip_and_atm(h):
     assert_almost_equal(T1, T2)
     assert_almost_equal(p1, p2)
     assert_almost_equal(rho1, rho2)
+
+
+def test_isa_ratios():
+    isa = ISA()
+    h = 0.0
+
+    delta = isa.delta(h)
+    theta = isa.theta(h)
+    sigma = isa.sigma(h)
+
+    # At sea level, all ratios should be 1
+    assert_almost_equal(delta, 1.0)
+    assert_almost_equal(theta, 1.0)
+    assert_almost_equal(sigma, 1.0)
+
+
+def test_tropopause_detection():
+    isa = ISA()
+    tropo = isa.tropopause()
+
+    # Default ICAO ISA tropopause is at 11 km
+    assert_almost_equal(tropo, 11000.0, decimal=0)
+
+
+@pytest.mark.parametrize("h", [0.0, 5000.0, 11000.0, 20000.0])
+def test_static_stability(h):
+    isa = ISA()
+    N2 = isa.static_stability(h)
+
+    # Static stability must be finite and non‑NaN
+    assert np.isfinite(N2)
+
+
+def test_isa_deviation_zero():
+    isa = ISA()
+    dT, dp, drho = isa.isa_deviation(5000.0)
+
+    # Standard ISA deviation at altitude should be zero
+    assert_almost_equal(dT, 0.0)
+    assert_almost_equal(dp, 0.0)
+    assert_almost_equal(drho, 0.0)
+
+
+def test_isa_deviation_nonzero():
+    isa = ISA()
+    T0, p0, rho0 = isa.atm(5000.0)
+
+    # Apply deviation
+    T1, p1, rho1 = isa.atm_deviation(5000.0, dT=5.0, dp=100.0, drho=0.01)
+    dT, dp, drho = isa.isa_deviation(5000.0)
+
+    # Deviation must match applied values
+    assert_almost_equal(T1, T0 + 5.0)
+    assert_almost_equal(p1, p0 + 100.0)
+    assert_almost_equal(rho1, rho0 + 0.01)

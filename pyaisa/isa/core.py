@@ -336,3 +336,28 @@ class ISA:
     def mach_from_tas(self, h: float, tas: float) -> float:
         a = self.speed_of_sound(h)
         return mach_from_tas(tas, a)
+
+    def delta(self, h: float) -> float:
+        """ISA pressure ratio δ = p / p0"""
+        return self._isa.delta(h)
+
+    def theta(self, h: float) -> float:
+        """ISA temperature ratio θ = T / T0"""
+        return self._isa.theta(h)
+
+    def sigma(self, h: float) -> float:
+        """ISA density ratio σ = ρ / ρ0"""
+        return self._isa.sigma(h)
+
+    def tropopause(self) -> float | None:
+        """Geometric altitude of first zero‑lapse layer"""
+        return self._isa.tropopause()
+
+    def static_stability(self, h: float) -> float:
+        """Brunt–Väisälä frequency squared at altitude"""
+        return self._isa.static_stability(h)
+
+    def isa_deviation(self, h: float) -> tuple[float, float, float]:
+        """ISA deviation ΔT, Δp, Δρ at altitude"""
+        dT, dp, drho = self._isa.isa_deviation(h)
+        return dT, dp, drho

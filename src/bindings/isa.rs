@@ -181,4 +181,42 @@ impl ISA {
     fn layer_at(&self, _py: Python, h: f64) -> Option<usize> {
         self.core.layer_at(h)
     }
+
+    /// ISA pressure ratio δ = p / p0
+    fn delta(&self, _py: Python, h: f64) -> Option<f64> {
+        self.core.delta(h)
+    }
+
+    /// ISA temperature ratio θ = T / T0
+    fn theta(&self, _py: Python, h: f64) -> Option<f64> {
+        self.core.theta(h)
+    }
+
+    /// ISA density ratio σ = ρ / ρ0
+    fn sigma(&self, _py: Python, h: f64) -> Option<f64> {
+        self.core.sigma(h)
+    }
+
+    /// Tropopause altitude (geometric)
+    fn tropopause(&self, _py: Python) -> Option<f64> {
+        self.core.tropopause()
+    }
+
+    /// Static stability (Brunt–Väisälä frequency squared)
+    fn static_stability(&self, _py: Python, h: f64) -> Option<f64> {
+        self.core.static_stability(h)
+    }
+
+    /// ISA deviation ΔT, Δp, Δρ
+    fn isa_deviation(&self, py: Python, h: f64) -> PyResult<PyObject> {
+        if let Some((d_t, d_p, d_rho)) = self.core.isa_deviation(h) {
+            Ok(PyTuple::new_bound(py, &[d_t, d_p, d_rho]).unbind().into())
+        } else {
+            let warnings = py.import_bound("warnings")?;
+            warnings.call_method1("warn", ("Altitude value outside range",))?;
+            Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
+                .unbind()
+                .into())
+        }
+    }
 }

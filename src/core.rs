@@ -213,4 +213,53 @@ impl IsaCore {
 
         (t, p, rho, err)
     }
+
+    /// ISA pressure ratio δ = p / p0
+    pub fn delta(&self, h: f64) -> Option<f64> {
+        let (_, p, _) = self.atm_scalar(h)?;
+        Some(p / self._p0)
+    }
+
+    /// ISA temperature ratio θ = T / T0
+    pub fn theta(&self, h: f64) -> Option<f64> {
+        let (t, _, _) = self.atm_scalar(h)?;
+        Some(t / self._t0)
+    }
+
+    /// ISA density ratio σ = ρ / ρ0
+    pub fn sigma(&self, h: f64) -> Option<f64> {
+        let (_, _, rho) = self.atm_scalar(h)?;
+        let rho0 = self._p0 / (self.r * self._t0);
+        Some(rho / rho0)
+    }
+
+    /// Tropopause detection: first layer with zero lapse rate
+    pub fn tropopause(&self) -> Option<f64> {
+        for (i, layer) in self.tl.iter().enumerate() {
+            if layer.lapse_rate() == 0.0 {
+                return Some(self.hl[i]);
+            }
+        }
+        None
+    }
+
+    /// Static stability (Brunt–Väisälä frequency squared)
+    /// N² = (g / T) * (Γ_d - Γ)
+    pub fn static_stability(&self, h: f64) -> Option<f64> {
+        let (t, _, _) = self.atm_scalar(h)?;
+        let idx = self.select(h);
+        let lapse = self.tl[idx].lapse_rate(); // Γ
+        let gamma_d = 0.00980665; // dry lapse rate [K/m]
+        let g = self._g;
+        Some((g / t) * (gamma_d - lapse))
+    }
+
+    /// ISA deviation reporting: ΔT, Δp, Δρ from standard ISA
+    pub fn isa_deviation(&self, h: f64) -> Option<(f64, f64, f64)> {
+        let (t, p, rho) = self.atm_scalar(h)?;
+        let t_std = self.tl[0].eval(h);
+        let p_std = self.pl[0].eval(h);
+        let rho_std = self.rho(t_std, p_std);
+        Some((t - t_std, p - p_std, rho - rho_std))
+    }
 }
