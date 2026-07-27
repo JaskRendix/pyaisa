@@ -1,5 +1,3 @@
-use crate::math::wind_loglaw;
-
 /// Power-law wind profile
 /// u(z) = u_ref * (z / z_ref)^alpha
 /// Typical alpha:
@@ -11,6 +9,14 @@ pub fn wind_power_law(z: f64, z_ref: f64, u_ref: f64, alpha: f64) -> f64 {
         return 0.0;
     }
     u_ref * (z / z_ref).powf(alpha)
+}
+
+/// Logarithmic wind profile [m/s]
+pub fn wind_loglaw(z: f64, z_ref: f64, u_ref: f64, z0: f64) -> f64 {
+    if z <= z0 || z_ref <= z0 || z0 <= 0.0 {
+        return 0.0;
+    }
+    u_ref * (z / z0).ln() / (z_ref / z0).ln()
 }
 
 /// Log-law with displacement height (urban/forest canopy)

@@ -1,5 +1,6 @@
+use crate::flight::geopotential_to_geometric;
 use crate::layers::{PLayer, TLayer};
-use crate::math::{geopotential_to_geometric, moist_air_density};
+use crate::thermo::moist_air_density;
 use rayon::prelude::*;
 
 /// Core ISA engine (Rust side)

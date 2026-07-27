@@ -7,6 +7,10 @@ pub fn flight_bindings(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(fl_to_altitude, m)?)?;
     m.add_function(wrap_pyfunction!(geometric_to_fl, m)?)?;
     m.add_function(wrap_pyfunction!(indicated_altitude, m)?)?;
+    m.add_function(wrap_pyfunction!(pressure_altitude, m)?)?;
+    m.add_function(wrap_pyfunction!(density_altitude, m)?)?;
+    m.add_function(wrap_pyfunction!(geometric_to_geopotential, m)?)?;
+    m.add_function(wrap_pyfunction!(geopotential_to_geometric, m)?)?;
     Ok(())
 }
 
@@ -14,15 +18,38 @@ pub fn flight_bindings(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 fn altitude_to_fl(h_p: f64) -> f64 {
     flight::altitude_to_fl(h_p)
 }
+
 #[pyfunction]
 fn fl_to_altitude(fl: f64) -> f64 {
     flight::fl_to_altitude(fl)
 }
+
 #[pyfunction]
 fn geometric_to_fl(h: f64, p: f64) -> f64 {
     flight::geometric_to_fl(h, p)
 }
+
 #[pyfunction]
 fn indicated_altitude(h: f64, p: f64, qnh: f64) -> f64 {
     flight::indicated_altitude(h, p, qnh)
+}
+
+#[pyfunction]
+fn pressure_altitude(p: f64) -> f64 {
+    flight::pressure_altitude(p)
+}
+
+#[pyfunction]
+fn density_altitude(p: f64, t: f64) -> f64 {
+    flight::density_altitude(p, t)
+}
+
+#[pyfunction]
+fn geometric_to_geopotential(h: f64) -> f64 {
+    flight::geometric_to_geopotential(h)
+}
+
+#[pyfunction]
+fn geopotential_to_geometric(h: f64) -> f64 {
+    flight::geopotential_to_geometric(h)
 }

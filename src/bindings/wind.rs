@@ -8,12 +8,18 @@ pub fn wind_bindings(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(wind_linear_shear, m)?)?;
     m.add_function(wrap_pyfunction!(wind_ekman, m)?)?;
     m.add_function(wrap_pyfunction!(gust, m)?)?;
+    m.add_function(wrap_pyfunction!(wind_loglaw, m)?)?;
     Ok(())
 }
 
 #[pyfunction]
 fn wind_power_law(z: f64, z_ref: f64, u_ref: f64, alpha: f64) -> f64 {
     wind::wind_power_law(z, z_ref, u_ref, alpha)
+}
+
+#[pyfunction]
+fn wind_loglaw(z: f64, z_ref: f64, u_ref: f64, z0: f64) -> f64 {
+    wind::wind_loglaw(z, z_ref, u_ref, z0)
 }
 
 #[pyfunction]

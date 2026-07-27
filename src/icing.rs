@@ -1,4 +1,4 @@
-use crate::math::{saturation_vapor_pressure, vapor_pressure};
+use crate::thermo::{saturation_vapor_pressure, vapor_pressure};
 
 /// Liquid water content (LWC) approximation (g/m³)
 pub fn lwc(T: f64, rh: f64) -> f64 {
