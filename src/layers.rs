@@ -22,20 +22,20 @@ impl TLayer {
 
 /// Pressure layer (isothermal or gradient)
 pub struct PLayer {
-    r: f64,     // specific gas constant
-    g: f64,     // gravity
-    hs: f64,    // layer base altitude
-    a: f64,     // lapse rate
-    ts: f64,    // temperature at layer base
-    ps: f64,    // pressure at layer base
-    grad: bool, // true = isothermal layer (a ≈ 0)
+    r: f64,  // specific gas constant
+    g: f64,  // gravity
+    hs: f64, // layer base altitude
+    a: f64,  // lapse rate
+    ts: f64, // temperature at layer base
+    ps: f64, // pressure at layer base
+    is_isothermal: bool,
 }
 
 impl PLayer {
     #[inline]
     pub fn new(r: f64, g: f64, hs: f64, a: f64, ts: f64, ps: f64) -> Self {
-        // isothermal layer when lapse rate is effectively zero
-        let grad = d(a) == 1.0;
+        // Safe float comparison for zero lapse rate
+        let is_isothermal = a.abs() < f64::EPSILON;
 
         Self {
             r,
@@ -44,7 +44,7 @@ impl PLayer {
             a,
             ts,
             ps,
-            grad,
+            is_isothermal,
         }
     }
 
@@ -53,13 +53,30 @@ impl PLayer {
     pub fn eval(&self, h: f64) -> f64 {
         let dh = h - self.hs;
 
-        if self.grad {
-            // isothermal layer
+        if self.is_isothermal {
+            // Isothermal layer
             self.ps * f64::exp(-self.g * dh / (self.r * self.ts))
         } else {
-            // gradient layer
+            // Gradient layer
             let ratio = 1.0 + self.a * dh / self.ts;
             self.ps * ratio.powf(-self.g / (self.r * self.a))
         }
+    }
+
+    /// Inverse: altitude from pressure
+    #[inline]
+    pub fn altitude_from_pressure(&self, p: f64) -> f64 {
+        if self.is_isothermal {
+            self.hs - (self.r * self.ts / self.g) * (p / self.ps).ln()
+        } else {
+            let exponent = -self.r * self.a / self.g;
+            self.hs + (self.ts / self.a) * ((p / self.ps).powf(exponent) - 1.0)
+        }
+    }
+
+    /// Pressure gradient dp/dh = -ρ g
+    #[inline]
+    pub fn pressure_gradient(&self, rho: f64) -> f64 {
+        -rho * self.g
     }
 }
