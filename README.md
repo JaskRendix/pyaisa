@@ -18,7 +18,7 @@ Repository: [https://github.com/newlawrence/Pyaisa](https://github.com/newlawren
 - ISA object and `build_atm` constructor  
 - Geometric and geopotential altitude support  
 
-### Thermodynamics and Humidity
+### Thermodynamics and Humidity  
 Implemented in `thermo.rs`:
 
 - Saturation vapor pressure  
@@ -32,7 +32,7 @@ Implemented in `thermo.rs`:
 - Moist‑air density  
 - Moist‑air speed of sound  
 
-### Aerodynamic and Compressible‑Flow Quantities
+### Aerodynamic and Compressible‑Flow Quantities  
 Implemented in `math.rs`:
 
 - Speed of sound  
@@ -47,7 +47,7 @@ Implemented in `math.rs`:
 - Prandtl–Glauert factor  
 - Airspeed conversions (CAS→EAS, EAS↔TAS, Mach from TAS)
 
-### Wind Models
+### Wind Models  
 Implemented in `wind.rs`:
 
 - Log‑law wind profile  
@@ -57,7 +57,7 @@ Implemented in `wind.rs`:
 - Ekman‑type rotation  
 - Gust factor  
 
-### Flight‑Level and Altitude Conversions
+### Flight‑Level and Altitude Conversions  
 Implemented in `flight.rs`:
 
 - Pressure altitude  
@@ -66,7 +66,7 @@ Implemented in `flight.rs`:
 - Flight level conversions  
 - Indicated altitude with QNH correction  
 
-### Icing Conditions
+### Icing Conditions  
 Implemented in `icing.rs`:
 
 - Liquid water content  
@@ -88,38 +88,11 @@ geopotential_to_geometric(H)
 
 ### Moist‑Air ISA
 
-Moist‑air density at altitude is computed through:
-
 ```python
 isa.atm_moist(h, rh)
+isa.speed_of_sound_moist(h, rh)
+isa.dynamic_pressure_moist(h, V, rh)
 ```
-
-This function evaluates the ISA at altitude `h`, then applies the thermodynamic moist‑air density model.
-
-Moist‑air speed of sound and moist dynamic pressure are computed at the Python layer using thermodynamic functions:
-
-- **moist speed of sound**  
-  ```python
-  isa.speed_of_sound_moist(h, rh)
-  ```
-
-- **moist dynamic pressure**  
-  ```python
-  isa.dynamic_pressure_moist(h, V, rh)
-  ```
-
-These functions use:
-
-- `moist_speed_of_sound(T, rh)`  
-- `dynamic_pressure(rho_m, V)`  
-
-with temperature and pressure obtained from:
-
-```python
-isa.atm(h)
-```
-
-Moist‑air extensions are implemented in Python using the thermodynamic functions exposed from Rust. Rust does not provide ISA‑level moist speed of sound or moist dynamic pressure.
 
 ### ISA Deviations
 
@@ -136,15 +109,51 @@ isa.layer_at(15000)
 
 ---
 
+## ISA Diagnostics
+
+### ISA Ratios
+
+```python
+isa.delta(h)   # pressure ratio p / p0
+isa.theta(h)   # temperature ratio T / T0
+isa.sigma(h)   # density ratio rho / rho0
+```
+
+### Tropopause Detection
+
+```python
+isa.tropopause()
+```
+
+### Static Stability (Brunt–Väisälä Frequency)
+
+```python
+isa.static_stability(h)
+```
+
+### ISA Deviation Reporting
+
+```python
+isa.isa_deviation(h)
+```
+
+Returns:
+
+```python
+(dT, dp, drho)
+```
+
+---
+
 ## Installation
 
-Editable mode:
+### Editable mode
 
 ```
 pip install -e .[test]
 ```
 
-Standard installation:
+### Standard installation
 
 ```
 pip install .
