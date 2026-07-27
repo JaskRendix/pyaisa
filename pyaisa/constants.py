@@ -4,20 +4,25 @@ Copyright (c) Pyaisa 2026  - Giorgio
 Distributed under the MIT License.
 """
 
-import numpy as np
+from __future__ import annotations
 
-INTS = {
+from collections.abc import Callable
+
+import numpy as np
+from numpy.typing import NDArray
+
+INTS: dict[str, int] = {
     "psize": -1,  # threshold for switching to parallel mode
 }
 
-DOUBLES = {
+DOUBLES: dict[str, float] = {
     "R": 287.05287,  # specific gas constant [J/(kg·K)]
     "g": 9.80665,  # gravitational acceleration [m/s²]
     "T0": 288.15,  # sea-level temperature [K]
     "p0": 101325.0,  # sea-level pressure [Pa]
 }
 
-ARRAYS = {
+ARRAYS: dict[str, NDArray[np.float64]] = {
     # COESA layer boundaries (geometric altitude)
     "h": np.array([0.0, 11000.0, 20000.0, 32000.0], dtype=float),
     # COESA lapse rates for each layer
@@ -27,12 +32,16 @@ ARRAYS = {
 
 class isa_params(dict):
     """
-    Clean, modern parameter container for ISA configuration.
-    Automatically validates layer structure and triggers refresh callbacks.
+    Parameter container for ISA configuration.
+    Validates layer structure and triggers refresh callbacks.
     """
 
-    def __init__(self, **kwargs):
+    callback: Callable[[], None] | None
+
+    def __init__(self, **kwargs) -> None:
         super().__init__()
+
+        self._initializing = True
 
         # Callback must be defined before any __setitem__
         self.callback = kwargs.pop("callback", None)
@@ -51,7 +60,9 @@ class isa_params(dict):
         for key, value in kwargs.items():
             self.__setitem__(key, value)
 
-    def __setitem__(self, key, value):
+        self._initializing = False
+
+    def __setitem__(self, key: str, value) -> None:
         # Integer parameters
         if key in INTS:
             value = int(value)
@@ -62,20 +73,21 @@ class isa_params(dict):
 
         # Layer structure
         elif key == "layers":
-            h = np.atleast_1d(value["h"]).astype(float)
-            a = np.atleast_1d(value["a"]).astype(float)
+            h_arr: NDArray[np.float64] = np.atleast_1d(value["h"]).astype(float)
+            a_arr: NDArray[np.float64] = np.atleast_1d(value["a"]).astype(float)
 
-            if h.size != a.size + 1 or a.size == 0:
+            if h_arr.size != a_arr.size + 1 or a_arr.size == 0:
                 raise ValueError('"h" array must be one element longer than "a" array')
 
-            value = {"h": h, "a": a}
+            value = {"h": h_arr, "a": a_arr}
 
         # Store
         super().__setitem__(key, value)
 
         # Trigger refresh
-        if self.callback is not None:
+        if (not self._initializing) and self.callback is not None:
             self.callback()
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
+        # Prevent deletion of ISA parameters
         pass

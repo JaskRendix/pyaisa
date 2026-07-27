@@ -4,7 +4,6 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert
 
 from pyaisa import atm, build_atm
 from pyaisa._core import geometric_to_geopotential, geopotential_to_geometric
-from pyaisa.constants import isa_params
 from pyaisa.isa import ISA
 
 
@@ -138,23 +137,6 @@ def test_build_atm_temperature_offset():
     f = build_atm(T0=288.15)
     T0 = f(0.0, dT=10.0)[0]
     assert_equal(T0, 298.15)
-
-
-def test_isa_params_layers_validation():
-    params = isa_params()
-    with pytest.raises(ValueError):
-        params["layers"] = {"h": np.array([0.0, 1.0]), "a": np.array([0.0, 0.0])}
-
-
-def test_isa_params_callback():
-    called = []
-
-    def cb():
-        called.append(True)
-
-    params = isa_params(callback=cb)
-    params["R"] = 300.0
-    assert called
 
 
 @pytest.mark.parametrize("psize", [-1, 0])

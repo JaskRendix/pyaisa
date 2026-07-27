@@ -10,7 +10,7 @@ from collections.abc import Callable
 from warnings import warn
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 from pyaisa._core import ISA as RustISA
 from pyaisa._core import (
@@ -66,6 +66,10 @@ class ISA:
     Provides a clean, modern interface for atmospheric queries.
     """
 
+    _allow_refresh: bool
+    _params: dict
+    _isa: RustISA
+
     def __init__(self, **kwargs) -> None:
         self._allow_refresh = False
         self._params = isa_params(callback=self._refresh, **kwargs)
@@ -76,7 +80,7 @@ class ISA:
         if not self._allow_refresh:
             return
 
-        rust_kwargs = {
+        rust_kwargs: dict[str, object] = {
             "R": self._params["R"],
             "g": self._params["g"],
             "layers": self._params["layers"],
@@ -91,7 +95,12 @@ class ISA:
     def params(self) -> dict:
         return self._params
 
-    def atm(self, h: ArrayLike):
+    def atm(
+        self, h: ArrayLike
+    ) -> (
+        tuple[float, float, float]
+        | tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
+    ):
         h_arr = np.atleast_1d(h).astype(float)
         T, p, rho = self._isa.atm(h_arr)
 
@@ -103,7 +112,12 @@ class ISA:
 
         return T, p, rho
 
-    def atm_geopotential(self, H: ArrayLike):
+    def atm_geopotential(
+        self, H: ArrayLike
+    ) -> (
+        tuple[float, float, float]
+        | tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
+    ):
         H_arr = np.atleast_1d(H).astype(float)
         h_arr = np.array([geopotential_to_geometric(H_i) for H_i in H_arr])
 
@@ -117,7 +131,12 @@ class ISA:
 
         return T, p, rho
 
-    def atm_moist(self, h: ArrayLike, rh: float):
+    def atm_moist(
+        self, h: ArrayLike, rh: float
+    ) -> (
+        tuple[float, float, float]
+        | tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
+    ):
         h_arr = np.atleast_1d(h).astype(float)
         T, p, _ = self._isa.atm(h_arr)
 
@@ -131,7 +150,12 @@ class ISA:
 
         return T, p, rho_m
 
-    def atm_deviation(self, h: ArrayLike, dT=0.0, dp=0.0, drho=0.0):
+    def atm_deviation(
+        self, h: ArrayLike, dT: float = 0.0, dp: float = 0.0, drho: float = 0.0
+    ) -> (
+        tuple[float, float, float]
+        | tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
+    ):
         h_arr = np.atleast_1d(h).astype(float)
         T, p, rho = self._isa.atm_deviation(h_arr, dT, dp, drho)
 
@@ -212,12 +236,7 @@ class ISA:
         return wind_power_law(z, z_ref, u_ref, alpha)
 
     def wind_loglaw_displaced(
-        self,
-        z: float,
-        z_ref: float = 10.0,
-        u_ref: float = 5.0,
-        z0: float = 0.1,
-        d: float = 0.0,
+        self, z: float, z_ref: float, u_ref: float, z0: float, d: float
     ) -> float:
         return wind_loglaw_displaced(z, z_ref, u_ref, z0, d)
 
@@ -233,7 +252,7 @@ class ISA:
         v0: float,
         z_ek: float = 300.0,
         angle_max_deg: float = 30.0,
-    ):
+    ) -> tuple[float, float]:
         return wind_ekman(z, u0, v0, z_ek, angle_max_deg)
 
     def gust(self, u_mean: float, g_factor: float = 0.3) -> float:
@@ -285,21 +304,18 @@ class ISA:
     def geometric_to_geopotential(self, h: float) -> float:
         return geometric_to_geopotential(h)
 
-    def viscosity(self, h: float):
-        """Return dynamic + kinematic viscosity at altitude h."""
+    def viscosity(self, h: float) -> tuple[float, float]:
         T, _, rho = self.atm(h)
         mu = dynamic_viscosity_sutherland(T)
         nu = kinematic_viscosity(mu, rho)
         return mu, nu
 
-    def reynolds(self, h: float, V: float, L: float):
-        """Reynolds number at altitude h for speed V and length L."""
+    def reynolds(self, h: float, V: float, L: float) -> float:
         _, _, rho = self.atm(h)
         mu = dynamic_viscosity_sutherland(self.atm(h)[0])
         return reynolds_number(rho, V, L, mu)
 
-    def stagnation(self, h: float, V: float):
-        """Return stagnation temperature and pressure at altitude h."""
+    def stagnation(self, h: float, V: float) -> tuple[float, float, float]:
         T, p, _ = self.atm(h)
         M = mach(V, speed_of_sound(T))
         return (
@@ -308,31 +324,26 @@ class ISA:
             stagnation_entropy(T, p),
         )
 
-    def compressibility(self, h: float, V: float):
-        """Prandtl–Glauert compressibility correction."""
+    def compressibility(self, h: float, V: float) -> float:
         M = self.mach(h, V)
         return prandtl_glauert(M)
 
-    def tas_to_eas(self, h: float, tas: float):
-        """Convert TAS → EAS at altitude h."""
+    def tas_to_eas(self, h: float, tas: float) -> float:
         _, _, rho = self.atm(h)
-        rho0 = 1.225  # ISA sea-level density
+        rho0 = 1.225
         return tas_to_eas(tas, rho, rho0)
 
-    def eas_to_tas(self, h: float, eas: float):
-        """Convert EAS → TAS at altitude h."""
+    def eas_to_tas(self, h: float, eas: float) -> float:
         _, _, rho = self.atm(h)
         rho0 = 1.225
         return eas_to_tas(eas, rho, rho0)
 
-    def cas_to_eas(self, cas: float):
-        """Convert CAS → EAS (compressible)."""
+    def cas_to_eas(self, cas: float) -> float:
         p0 = 101325.0
         rho0 = 1.225
         return cas_to_eas(cas, p0, rho0)
 
-    def mach_from_tas(self, h: float, tas: float):
-        """Mach number from TAS at altitude h."""
+    def mach_from_tas(self, h: float, tas: float) -> float:
         a = self.speed_of_sound(h)
         return mach_from_tas(tas, a)
 
@@ -340,7 +351,12 @@ class ISA:
 def build_atm(**kwargs) -> Callable[[ArrayLike, float], tuple]:
     base = ISA(**kwargs)
 
-    def atm(h: ArrayLike, dT: float = 0.0):
+    def atm(
+        h: ArrayLike, dT: float = 0.0
+    ) -> (
+        tuple[float, float, float]
+        | tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
+    ):
         if dT != 0.0:
             params = base.params.copy()
             params["T0"] += dT
