@@ -1,17 +1,17 @@
 use pyo3::prelude::*;
 
-mod core;
-mod flight;
-mod icing;
-mod layers;
-mod math;
-mod thermo;
-mod wind;
+pub mod core;
+pub mod flight;
+pub mod icing;
+pub mod layers;
+pub mod math;
+pub mod thermo;
+pub mod wind;
 
 mod bindings;
 
 #[pymodule]
-fn _core(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn pyaisa_core(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // ISA class
     m.add_class::<bindings::isa::ISA>()?;
 

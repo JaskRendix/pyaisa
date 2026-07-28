@@ -3,7 +3,7 @@ target/
 Cargo.lock
 
 # Python extension module produced by maturin
-pyaisa/_core*.so
+pyaisa/pyaisa_core*.so
 
 # Python caches
 __pycache__/

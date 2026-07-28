@@ -3,8 +3,8 @@ import pytest
 from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert_equal
 
 from pyaisa import atm
-from pyaisa._core import geometric_to_geopotential, geopotential_to_geometric
 from pyaisa.isa.core import ISA
+from pyaisa.pyaisa_core import geometric_to_geopotential, geopotential_to_geometric
 
 
 @pytest.mark.parametrize(

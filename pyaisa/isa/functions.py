@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
-from pyaisa._core import (
+from pyaisa.pyaisa_core import (
     altitude_to_fl,
     cas_to_eas,
     density_altitude,

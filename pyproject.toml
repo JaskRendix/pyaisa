@@ -20,5 +20,5 @@ test = ["pytest", "pytest-cov"]
 addopts = "--cov=pyaisa --cov-report=term-missing"
 
 [tool.maturin]
-module-name = "pyaisa._core"
+module-name = "pyaisa.pyaisa_core"
 compatibility = "manylinux_2_28"

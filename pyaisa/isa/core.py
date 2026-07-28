@@ -6,8 +6,8 @@ from warnings import warn
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from pyaisa._core import ISA as RustISA
 from pyaisa.constants import isa_params
+from pyaisa.pyaisa_core import ISA as RustISA
 
 from .functions import (
     altitude_to_fl,

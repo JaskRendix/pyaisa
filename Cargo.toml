@@ -6,8 +6,8 @@ description = "Rust implementation of the Pyaisa ISA model with PyO3 bindings"
 license = "MIT"
 
 [lib]
-name = "_core"
-crate-type = ["cdylib"]
+name = "pyaisa_core"
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.21", features = ["extension-module"] }

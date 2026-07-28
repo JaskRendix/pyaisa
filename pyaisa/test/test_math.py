@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from pyaisa import atm
-from pyaisa._core import (
+from pyaisa.pyaisa_core import (
     altitude_to_fl,
     cas_to_eas,
     density_altitude,
