@@ -1,16 +1,11 @@
 use pyaisa_core::math::{
-    cas_to_eas, d, dynamic_pressure, dynamic_viscosity_sutherland, eas_to_tas, kinematic_viscosity,
-    mach, mach_from_tas, prandtl_glauert, reynolds_number, speed_of_sound, stagnation_entropy,
-    stagnation_pressure, stagnation_temperature, tas_to_eas,
+    cas_to_eas, cas_to_mach, cas_to_tas, d, dynamic_pressure, dynamic_viscosity_sutherland,
+    eas_to_cas, eas_to_tas, kinematic_viscosity, mach, mach_from_tas, mach_moist, mach_to_cas,
+    prandtl_glauert, reynolds_number, speed_of_sound, stagnation_entropy, stagnation_pressure,
+    stagnation_temperature, tas_to_cas, tas_to_eas, tas_to_mach_moist,
 };
 
 const EPS: f64 = 1e-9;
-
-//
-// ─────────────────────────────────────────────────────────────
-// ZERO INDICATOR
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn d_zero() {
@@ -21,12 +16,6 @@ fn d_zero() {
 fn d_nonzero() {
     assert_eq!(d(1e-3), 0.0);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// SPEED OF SOUND
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn speed_of_sound_basic() {
@@ -39,12 +28,6 @@ fn speed_of_sound_monotonic() {
     assert!(speed_of_sound(300.0) > speed_of_sound(280.0));
 }
 
-//
-// ─────────────────────────────────────────────────────────────
-// DYNAMIC PRESSURE
-// ─────────────────────────────────────────────────────────────
-//
-
 #[test]
 fn dynamic_pressure_basic() {
     let q = dynamic_pressure(1.225, 50.0);
@@ -55,12 +38,6 @@ fn dynamic_pressure_basic() {
 fn dynamic_pressure_zero_velocity() {
     assert_eq!(dynamic_pressure(1.225, 0.0), 0.0);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// MACH NUMBER
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn mach_basic() {
@@ -78,12 +55,6 @@ fn mach_supersonic() {
     assert!(mach(400.0, 340.0) > 1.0);
 }
 
-//
-// ─────────────────────────────────────────────────────────────
-// SUTHERLAND VISCOSITY
-// ─────────────────────────────────────────────────────────────
-//
-
 #[test]
 fn sutherland_basic() {
     let mu = dynamic_viscosity_sutherland(300.0);
@@ -94,12 +65,6 @@ fn sutherland_basic() {
 fn sutherland_monotonic() {
     assert!(dynamic_viscosity_sutherland(350.0) > dynamic_viscosity_sutherland(250.0));
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// KINEMATIC VISCOSITY
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn kinematic_viscosity_basic() {
@@ -113,12 +78,6 @@ fn kinematic_viscosity_zero_density() {
     assert!(nu.is_infinite());
 }
 
-//
-// ─────────────────────────────────────────────────────────────
-// REYNOLDS NUMBER
-// ─────────────────────────────────────────────────────────────
-//
-
 #[test]
 fn reynolds_basic() {
     let re = reynolds_number(1.225, 50.0, 1.0, 1.8e-5);
@@ -129,12 +88,6 @@ fn reynolds_basic() {
 fn reynolds_zero_velocity() {
     assert_eq!(reynolds_number(1.225, 0.0, 1.0, 1.8e-5), 0.0);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// STAGNATION TEMPERATURE
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn stagnation_temperature_basic() {
@@ -147,12 +100,6 @@ fn stagnation_temperature_zero_mach() {
     assert_eq!(stagnation_temperature(288.15, 0.0), 288.15);
 }
 
-//
-// ─────────────────────────────────────────────────────────────
-// STAGNATION PRESSURE
-// ─────────────────────────────────────────────────────────────
-//
-
 #[test]
 fn stagnation_pressure_basic() {
     let p0 = stagnation_pressure(101325.0, 0.5);
@@ -163,12 +110,6 @@ fn stagnation_pressure_basic() {
 fn stagnation_pressure_zero_mach() {
     assert_eq!(stagnation_pressure(101325.0, 0.0), 101325.0);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// STAGNATION ENTROPY
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn stagnation_entropy_basic() {
@@ -182,12 +123,6 @@ fn stagnation_entropy_monotonic() {
     let s2 = stagnation_entropy(300.0, 101325.0);
     assert!(s2 > s1);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// PRANDTL–GLAUERT
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn prandtl_glauert_subsonic() {
@@ -206,12 +141,6 @@ fn prandtl_glauert_supersonic_invalid() {
     let pg = prandtl_glauert(1.2);
     assert!(pg.is_infinite());
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// EAS ↔ TAS
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn eas_to_tas_basic() {
@@ -233,12 +162,6 @@ fn eas_tas_round_trip() {
     assert!((eas2 - eas).abs() < EPS);
 }
 
-//
-// ─────────────────────────────────────────────────────────────
-// CAS → EAS
-// ─────────────────────────────────────────────────────────────
-//
-
 #[test]
 fn cas_to_eas_basic() {
     let eas = cas_to_eas(100.0, 101325.0, 1.225);
@@ -250,12 +173,6 @@ fn cas_to_eas_zero() {
     let eas = cas_to_eas(0.0, 101325.0, 1.225);
     assert_eq!(eas, 0.0);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// MACH FROM TAS
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn mach_from_tas_basic() {
@@ -271,4 +188,83 @@ fn mach_from_tas_subsonic() {
 #[test]
 fn mach_from_tas_supersonic() {
     assert!(mach_from_tas(400.0, 340.0) > 1.0);
+}
+
+#[test]
+fn eas_to_cas_basic() {
+    let cas = eas_to_cas(100.0, 101325.0, 1.225);
+    assert!(cas < 100.0);
+    assert!(cas > 95.0);
+}
+
+#[test]
+fn eas_to_cas_round_trip() {
+    let cas = 150.0;
+    let eas = cas_to_eas(cas, 101325.0, 1.225);
+    let cas2 = eas_to_cas(eas, 101325.0, 1.225);
+    assert!((cas2 - cas).abs() < 0.5);
+}
+
+#[test]
+fn cas_to_mach_basic() {
+    let mach = cas_to_mach(100.0, 101325.0, 1.225);
+    assert!(mach > 0.0);
+}
+
+#[test]
+fn mach_to_cas_basic() {
+    let cas = mach_to_cas(0.3, 101325.0, 1.225);
+    assert!(cas > 0.0);
+}
+
+#[test]
+fn cas_mach_round_trip() {
+    let cas = 120.0;
+    let mach = cas_to_mach(cas, 101325.0, 1.225);
+    let cas2 = mach_to_cas(mach, 101325.0, 1.225);
+    assert!((cas2 - cas).abs() < 0.5);
+}
+
+#[test]
+fn tas_to_cas_basic() {
+    let cas = tas_to_cas(250.0, 288.15, 90000.0, 1.0);
+    assert!(cas > 0.0);
+}
+
+#[test]
+fn cas_to_tas_basic() {
+    let tas = cas_to_tas(150.0, 288.15, 90000.0, 1.0);
+    assert!(tas.is_finite());
+}
+
+#[test]
+fn tas_cas_round_trip() {
+    let tas = 220.0;
+    let cas = tas_to_cas(tas, 288.15, 90000.0, 1.0);
+    let tas2 = cas_to_tas(cas, 288.15, 90000.0, 1.0);
+    assert!((tas2 - tas).abs() < 1.0);
+}
+
+#[test]
+fn mach_moist_basic() {
+    let m = mach_moist(300.0, 300.0, 0.5, 90000.0);
+    assert!(m > 0.0);
+}
+
+#[test]
+fn tas_to_mach_moist_basic() {
+    let m = tas_to_mach_moist(250.0, 300.0, 0.5, 90000.0);
+    assert!(m > 0.0);
+}
+
+#[test]
+fn mach_moist_vs_dry() {
+    let a_dry = speed_of_sound(300.0);
+    let a_moist = pyaisa_core::thermo::moist_speed_of_sound(300.0, 1.0, 90000.0);
+
+    let m_dry = 250.0 / a_dry;
+    let m_moist = 250.0 / a_moist;
+
+    // moist air has lower speed of sound → higher Mach
+    assert!(m_moist < m_dry);
 }

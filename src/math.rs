@@ -89,3 +89,73 @@ pub fn cas_to_eas(cas: f64, p0: f64, rho0: f64) -> f64 {
 pub fn mach_from_tas(tas: f64, a: f64) -> f64 {
     tas / a
 }
+
+/// CAS from Mach at sea level
+pub fn mach_to_cas(mach: f64, p0: f64, rho0: f64) -> f64 {
+    const GAMMA: f64 = 1.4;
+
+    let term = (1.0 + 0.5 * (GAMMA - 1.0) * mach * mach).powf(GAMMA / (GAMMA - 1.0)) - 1.0;
+
+    let qc = term * p0;
+    (2.0 * qc / rho0).sqrt()
+}
+
+/// Mach from CAS at sea level
+pub fn cas_to_mach(cas: f64, p0: f64, rho0: f64) -> f64 {
+    const GAMMA: f64 = 1.4;
+
+    let qc = 0.5 * rho0 * cas * cas;
+    let term = qc / p0 + 1.0;
+
+    ((term.powf((GAMMA - 1.0) / GAMMA) - 1.0) * 2.0 / (GAMMA - 1.0)).sqrt()
+}
+
+/// CAS from EAS at sea level
+pub fn eas_to_cas(eas: f64, p0: f64, rho0: f64) -> f64 {
+    const GAMMA: f64 = 1.4;
+
+    let qc = 0.5 * rho0 * eas * eas;
+    let term = qc / p0 + 1.0;
+
+    let mach = ((term.powf((GAMMA - 1.0) / GAMMA) - 1.0) * 2.0 / (GAMMA - 1.0)).sqrt();
+    let a0 = (GAMMA * p0 / rho0).sqrt();
+
+    mach * a0
+}
+
+/// CAS from TAS at altitude
+pub fn tas_to_cas(tas: f64, t: f64, p: f64, rho: f64) -> f64 {
+    const GAMMA: f64 = 1.4;
+
+    let a = (GAMMA * 287.05287 * t).sqrt();
+    let mach = tas / a;
+
+    let qc = p * ((1.0 + 0.5 * (GAMMA - 1.0) * mach * mach).powf(GAMMA / (GAMMA - 1.0)) - 1.0);
+
+    (2.0 * qc / rho).sqrt()
+}
+
+/// TAS from CAS at altitude
+pub fn cas_to_tas(cas: f64, t: f64, p: f64, rho: f64) -> f64 {
+    const GAMMA: f64 = 1.4;
+
+    let qc = 0.5 * rho * cas * cas;
+    let term = qc / p + 1.0;
+
+    let mach = ((term.powf((GAMMA - 1.0) / GAMMA) - 1.0) * 2.0 / (GAMMA - 1.0)).sqrt();
+    let a = (GAMMA * 287.05287 * t).sqrt();
+
+    mach * a
+}
+
+/// Mach number using moist-air speed of sound
+pub fn mach_moist(v: f64, t: f64, rh: f64, p: f64) -> f64 {
+    let a = crate::thermo::moist_speed_of_sound(t, rh, p);
+    v / a
+}
+
+/// Mach from TAS using moist-air speed of sound
+pub fn tas_to_mach_moist(tas: f64, t: f64, rh: f64, p: f64) -> f64 {
+    let a = crate::thermo::moist_speed_of_sound(t, rh, p);
+    tas / a
+}

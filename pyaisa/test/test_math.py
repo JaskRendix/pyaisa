@@ -1,14 +1,17 @@
 import numpy as np
 import pytest
 
-from pyaisa import atm
+from pyaisa import ISA, atm
 from pyaisa.pyaisa_core import (
     altitude_to_fl,
     cas_to_eas,
+    cas_to_mach,
+    cas_to_tas,
     density_altitude,
     dew_point,
     dynamic_pressure,
     dynamic_viscosity_sutherland,
+    eas_to_cas,
     eas_to_tas,
     fl_to_altitude,
     freezing_fraction,
@@ -20,8 +23,11 @@ from pyaisa.pyaisa_core import (
     lwc,
     mach,
     mach_from_tas,
+    mach_moist,
+    mach_to_cas,
     mixing_ratio,
     moist_lapse_rate,
+    moist_speed_of_sound,
     potential_temperature,
     prandtl_glauert,
     pressure_altitude,
@@ -32,7 +38,9 @@ from pyaisa.pyaisa_core import (
     stagnation_pressure,
     stagnation_temperature,
     supercooled_fraction,
+    tas_to_cas,
     tas_to_eas,
+    tas_to_mach_moist,
     vapor_pressure,
     virtual_temperature,
     wet_bulb_temperature,
@@ -398,3 +406,109 @@ def test_mach_from_tas():
     tas = a * 0.8
     expected = 0.8
     assert pytest.approx(mach_from_tas(tas, a), rel=1e-6) == expected
+
+
+def test_eas_to_cas_basic():
+    eas = 100.0
+    p0 = 101325.0
+    rho0 = 1.225
+
+    cas = eas_to_cas(eas, p0, rho0)
+
+    # CAS is slightly LOWER than EAS at low Mach
+    assert cas < eas
+    assert cas > 95.0
+
+
+def test_eas_to_cas_round_trip():
+    eas = 150.0
+    p0 = 101325.0
+    rho0 = 1.225
+
+    cas = eas_to_cas(eas, p0, rho0)
+    eas2 = cas_to_eas(cas, p0, rho0)
+
+    assert pytest.approx(eas2, rel=1e-3) == eas
+
+
+def test_cas_to_mach_basic():
+    cas = 120.0
+    p0 = 101325.0
+    rho0 = 1.225
+
+    m = cas_to_mach(cas, p0, rho0)
+    assert m > 0.0
+
+
+def test_mach_to_cas_basic():
+    m = 0.3
+    p0 = 101325.0
+    rho0 = 1.225
+
+    cas = mach_to_cas(m, p0, rho0)
+    assert cas > 0.0
+
+
+def test_cas_mach_round_trip():
+    cas = 150.0
+    p0 = 101325.0
+    rho0 = 1.225
+
+    m = cas_to_mach(cas, p0, rho0)
+    cas2 = mach_to_cas(m, p0, rho0)
+
+    assert pytest.approx(cas2, rel=1e-3) == cas
+
+
+def test_tas_to_cas_basic():
+    tas = 250.0
+    T, p, rho = atm(5000)  # realistic altitude
+
+    cas = tas_to_cas(tas, T, p, rho)
+    assert cas > 0.0
+
+
+def test_cas_to_tas_basic():
+    cas = 150.0
+    T, p, rho = atm(5000)
+
+    tas = cas_to_tas(cas, T, p, rho)
+
+    # TAS is close to CAS at low Mach
+    assert tas > 140.0
+    assert tas < 160.0
+
+
+def test_tas_cas_round_trip():
+    tas = 220.0
+    T, p, rho = atm(5000)
+
+    cas = tas_to_cas(tas, T, p, rho)
+    tas2 = cas_to_tas(cas, T, p, rho)
+
+    assert pytest.approx(tas2, rel=1e-3) == tas
+
+
+def test_mach_moist_basic():
+    T, p, _ = atm(5000)
+    m = mach_moist(250.0, T, 0.5, p)
+    assert m > 0.0
+
+
+def test_tas_to_mach_moist_basic():
+    T, p, _ = atm(5000)
+    m = tas_to_mach_moist(250.0, T, 0.5, p)
+    assert m > 0.0
+
+
+def test_mach_moist_vs_dry():
+    T, p, _ = atm(5000)
+
+    a_dry = speed_of_sound(T)
+    isa = ISA()
+    a_moist = moist_speed_of_sound(isa._isa, 5000, 1.0)
+
+    m_dry = 250.0 / a_dry
+    m_moist = 250.0 / a_moist
+
+    assert m_moist < m_dry

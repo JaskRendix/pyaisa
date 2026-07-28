@@ -46,6 +46,9 @@ Implemented in `math.rs`:
 - Stagnation entropy  
 - Prandtl–Glauert factor  
 - Airspeed conversions (CAS→EAS, EAS↔TAS, Mach from TAS)
+- CAS↔Mach conversions
+- TAS↔CAS conversions
+- Moist‑air Mach number
 
 ### Wind Models  
 Implemented in `wind.rs`:
@@ -206,6 +209,29 @@ pyaisa.atm(11000, 15)
 ---
 
 ## Extended Physics Examples
+
+### ICAO Airspeed Conversions
+
+```python
+# CAS ↔ EAS
+eas = isa.cas_to_eas(100)
+cas = isa.eas_to_cas(100)
+
+# EAS ↔ TAS
+tas = isa.eas_to_tas(10000, eas=120)
+eas2 = isa.tas_to_eas(10000, tas)
+
+# CAS ↔ TAS
+tas = isa.cas_to_tas(5000, cas=150)
+cas2 = isa.tas_to_cas(5000, tas)
+
+# CAS ↔ Mach
+M = isa.cas_to_mach(150)
+cas3 = isa.mach_to_cas(M)
+
+# Moist‑air Mach
+M_moist = isa.mach_moist(5000, V=250, rh=0.8)
+```
 
 ### Speed of Sound and Mach Number
 

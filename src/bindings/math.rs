@@ -18,7 +18,13 @@ pub fn math_bindings(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tas_to_eas, m)?)?;
     m.add_function(wrap_pyfunction!(cas_to_eas, m)?)?;
     m.add_function(wrap_pyfunction!(mach_from_tas, m)?)?;
-
+    m.add_function(wrap_pyfunction!(eas_to_cas, m)?)?;
+    m.add_function(wrap_pyfunction!(cas_to_tas, m)?)?;
+    m.add_function(wrap_pyfunction!(tas_to_cas, m)?)?;
+    m.add_function(wrap_pyfunction!(cas_to_mach, m)?)?;
+    m.add_function(wrap_pyfunction!(mach_to_cas, m)?)?;
+    m.add_function(wrap_pyfunction!(mach_moist, m)?)?;
+    m.add_function(wrap_pyfunction!(tas_to_mach_moist, m)?)?;
     Ok(())
 }
 
@@ -90,4 +96,39 @@ fn cas_to_eas(cas: f64, p0: f64, rho0: f64) -> f64 {
 #[pyfunction]
 fn mach_from_tas(tas: f64, a: f64) -> f64 {
     math::mach_from_tas(tas, a)
+}
+
+#[pyfunction]
+fn eas_to_cas(eas: f64, p0: f64, rho0: f64) -> f64 {
+    math::eas_to_cas(eas, p0, rho0)
+}
+
+#[pyfunction]
+fn cas_to_tas(cas: f64, t: f64, p: f64, rho: f64) -> f64 {
+    math::cas_to_tas(cas, t, p, rho)
+}
+
+#[pyfunction]
+fn tas_to_cas(tas: f64, t: f64, p: f64, rho: f64) -> f64 {
+    math::tas_to_cas(tas, t, p, rho)
+}
+
+#[pyfunction]
+fn cas_to_mach(cas: f64, p0: f64, rho0: f64) -> f64 {
+    math::cas_to_mach(cas, p0, rho0)
+}
+
+#[pyfunction]
+fn mach_to_cas(mach: f64, p0: f64, rho0: f64) -> f64 {
+    math::mach_to_cas(mach, p0, rho0)
+}
+
+#[pyfunction]
+fn mach_moist(v: f64, t: f64, rh: f64, p: f64) -> f64 {
+    math::mach_moist(v, t, rh, p)
+}
+
+#[pyfunction]
+fn tas_to_mach_moist(tas: f64, t: f64, rh: f64, p: f64) -> f64 {
+    math::tas_to_mach_moist(tas, t, rh, p)
 }

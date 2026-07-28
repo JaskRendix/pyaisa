@@ -1,9 +1,7 @@
 use pyaisa_core::core::IsaCore;
 use pyaisa_core::flight::*;
 use pyaisa_core::layers::*;
-use pyaisa_core::math::*;
 use pyaisa_core::thermo::*;
-use pyaisa_core::wind::*;
 
 fn build_test_isa() -> IsaCore {
     let r = 287.05287;
@@ -96,8 +94,8 @@ fn isa_vector_consistency() {
 #[test]
 fn geopotential_round_trip() {
     let h: f64 = 8000.0_f64;
-    let H = geometric_to_geopotential(h);
-    let h2 = geopotential_to_geometric(H);
+    let g = geometric_to_geopotential(h);
+    let h2 = geopotential_to_geometric(g);
 
     assert!((h2 - h).abs() < 1e-6_f64);
 }

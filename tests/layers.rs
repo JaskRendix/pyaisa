@@ -2,12 +2,6 @@ use pyaisa_core::layers::{PLayer, TLayer};
 
 const EPS: f64 = 1e-9;
 
-//
-// ─────────────────────────────────────────────────────────────
-// TLayer TESTS
-// ─────────────────────────────────────────────────────────────
-//
-
 #[test]
 fn tlayer_constant_lapse_rate() {
     let t = TLayer::new(0.0, -0.0065, 288.15);
@@ -40,12 +34,6 @@ fn tlayer_lapse_rate_correct() {
     assert!((t.lapse_rate() + 0.0065).abs() < EPS);
 }
 
-//
-// ─────────────────────────────────────────────────────────────
-// PLayer TESTS — ISOTHERMAL
-// ─────────────────────────────────────────────────────────────
-//
-
 #[test]
 fn player_isothermal_basic() {
     let p = PLayer::new(287.0, 9.81, 0.0, 0.0, 288.15, 101325.0);
@@ -68,12 +56,6 @@ fn player_isothermal_inverse() {
     let h2 = p.altitude_from_pressure(p1500);
     assert!((h2 - 1500.0).abs() < 1e-6);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// PLayer TESTS — GRADIENT
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn player_gradient_basic() {
@@ -99,12 +81,6 @@ fn player_gradient_inverse() {
     let h2 = p.altitude_from_pressure(p3000);
     assert!((h2 - 3000.0).abs() < 1e-6);
 }
-
-//
-// ─────────────────────────────────────────────────────────────
-// PLayer TESTS — EDGE CASES
-// ─────────────────────────────────────────────────────────────
-//
 
 #[test]
 fn player_extreme_low_pressure() {

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from warnings import warn
 
 import numpy as np
@@ -12,10 +11,13 @@ from pyaisa.pyaisa_core import ISA as RustISA
 from .functions import (
     altitude_to_fl,
     cas_to_eas,
+    cas_to_mach,
+    cas_to_tas,
     density_altitude,
     dew_point,
     dynamic_pressure,
     dynamic_viscosity_sutherland,
+    eas_to_cas,
     eas_to_tas,
     fl_to_altitude,
     freezing_fraction,
@@ -29,6 +31,8 @@ from .functions import (
     lwc,
     mach,
     mach_from_tas,
+    mach_moist,
+    mach_to_cas,
     mixing_ratio,
     moist_air_density,
     moist_lapse_rate,
@@ -43,7 +47,9 @@ from .functions import (
     stagnation_pressure,
     stagnation_temperature,
     supercooled_fraction,
+    tas_to_cas,
     tas_to_eas,
+    tas_to_mach_moist,
     vapor_pressure,
     virtual_temperature,
     wet_bulb_temperature,
@@ -166,7 +172,7 @@ class ISA:
 
     def speed_of_sound_moist(self, h: float, rh: float) -> float:
         T, _, _ = self.atm(h)
-        return moist_speed_of_sound(T, rh)
+        return moist_speed_of_sound(self._isa, h, rh)
 
     def mach(self, h: float, V: float) -> float:
         return mach(V, self.speed_of_sound(h))
@@ -361,3 +367,34 @@ class ISA:
         """ISA deviation ΔT, Δp, Δρ at altitude"""
         dT, dp, drho = self._isa.isa_deviation(h)
         return dT, dp, drho
+
+    def eas_to_cas(self, eas: float) -> float:
+        p0 = 101325.0
+        rho0 = 1.225
+        return eas_to_cas(eas, p0, rho0)
+
+    def cas_to_tas(self, h: float, cas: float) -> float:
+        T, p, rho = self.atm(h)
+        return cas_to_tas(cas, T, p, rho)
+
+    def tas_to_cas(self, h: float, tas: float) -> float:
+        T, p, rho = self.atm(h)
+        return tas_to_cas(tas, T, p, rho)
+
+    def cas_to_mach(self, cas: float) -> float:
+        p0 = 101325.0
+        rho0 = 1.225
+        return cas_to_mach(cas, p0, rho0)
+
+    def mach_to_cas(self, mach: float) -> float:
+        p0 = 101325.0
+        rho0 = 1.225
+        return mach_to_cas(mach, p0, rho0)
+
+    def mach_moist(self, h: float, V: float, rh: float) -> float:
+        T, p, _ = self.atm(h)
+        return mach_moist(V, T, rh, p)
+
+    def tas_to_mach_moist(self, h: float, tas: float, rh: float) -> float:
+        T, p, _ = self.atm(h)
+        return tas_to_mach_moist(tas, T, rh, p)
