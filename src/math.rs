@@ -76,10 +76,14 @@ pub fn tas_to_eas(tas: f64, rho: f64, rho0: f64) -> f64 {
 
 pub fn cas_to_eas(cas: f64, p0: f64, rho0: f64) -> f64 {
     const GAMMA: f64 = 1.4;
-    let qc = dynamic_pressure(rho0, cas);
-    let term = qc / p0 + 1.0;
-    let mach = ((term.powf((GAMMA - 1.0) / GAMMA) - 1.0) * 2.0 / (GAMMA - 1.0)).sqrt();
-    mach * (GAMMA * p0 / rho0).sqrt()
+
+    let a0 = (GAMMA * p0 / rho0).sqrt();
+    let m_c = cas / a0;
+
+    let qc_over_p0 = (1.0 + 0.5 * (GAMMA - 1.0) * m_c * m_c).powf(GAMMA / (GAMMA - 1.0)) - 1.0;
+    let qc = qc_over_p0 * p0;
+
+    (2.0 * qc / rho0).sqrt()
 }
 
 pub fn mach_from_tas(tas: f64, a: f64) -> f64 {

@@ -76,9 +76,11 @@ pub fn virtual_temperature(t: f64, w: f64) -> f64 {
 pub fn moist_air_density(p: f64, t: f64, rh: f64) -> f64 {
     const RD: f64 = 287.05287;
     let e = vapor_pressure(t, rh);
-    if e >= p {
+
+    if e + 1e-6 >= p {
         return f64::NAN;
     }
+
     let w = 0.622 * e / (p - e);
     let r_m = RD * (1.0 + 1.6078 * w);
     p / (r_m * t)
