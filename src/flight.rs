@@ -9,7 +9,7 @@ pub fn fl_to_altitude(fl: f64) -> f64 {
 }
 
 /// Convert geometric altitude to flight level
-pub fn geometric_to_fl(h: f64, p: f64) -> f64 {
+pub fn geometric_to_fl(_h: f64, p: f64) -> f64 {
     let h_p = pressure_altitude(p);
     altitude_to_fl(h_p)
 }

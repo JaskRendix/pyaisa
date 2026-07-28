@@ -48,8 +48,8 @@ fn kinematic_viscosity(mu: f64, rho: f64) -> f64 {
 }
 
 #[pyfunction]
-fn reynolds_number(rho: f64, v: f64, L: f64, mu: f64) -> f64 {
-    math::reynolds_number(rho, v, L, mu)
+fn reynolds_number(rho: f64, v: f64, l: f64, mu: f64) -> f64 {
+    math::reynolds_number(rho, v, l, mu)
 }
 
 #[pyfunction]

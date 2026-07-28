@@ -1,5 +1,3 @@
-use crate::math::d;
-
 /// Temperature layer (linear lapse rate)
 pub struct TLayer {
     hs: f64, // layer base altitude

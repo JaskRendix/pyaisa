@@ -24,26 +24,26 @@ pub fn mach(v: f64, a: f64) -> f64 {
     v / a
 }
 
-pub fn dynamic_viscosity_sutherland(T: f64) -> f64 {
+pub fn dynamic_viscosity_sutherland(t: f64) -> f64 {
     // Sutherland constants for dry air
     const MU0: f64 = 1.716e-5; // reference viscosity [Pa·s]
     const T0: f64 = 273.15; // reference temperature [K]
     const S: f64 = 110.4; // Sutherland constant [K]
 
-    MU0 * (T / T0).powf(3.0 / 2.0) * (T0 + S) / (T + S)
+    MU0 * (t / T0).powf(3.0 / 2.0) * (T0 + S) / (t + S)
 }
 
 pub fn kinematic_viscosity(mu: f64, rho: f64) -> f64 {
     mu / rho
 }
 
-pub fn reynolds_number(rho: f64, v: f64, L: f64, mu: f64) -> f64 {
-    rho * v * L / mu
+pub fn reynolds_number(rho: f64, v: f64, l: f64, mu: f64) -> f64 {
+    rho * v * l / mu
 }
 
-pub fn stagnation_temperature(T: f64, mach: f64) -> f64 {
+pub fn stagnation_temperature(t: f64, mach: f64) -> f64 {
     const GAMMA: f64 = 1.4;
-    T * (1.0 + 0.5 * (GAMMA - 1.0) * mach * mach)
+    t * (1.0 + 0.5 * (GAMMA - 1.0) * mach * mach)
 }
 
 pub fn stagnation_pressure(p: f64, mach: f64) -> f64 {
@@ -51,11 +51,11 @@ pub fn stagnation_pressure(p: f64, mach: f64) -> f64 {
     p * (1.0 + 0.5 * (GAMMA - 1.0) * mach * mach).powf(GAMMA / (GAMMA - 1.0))
 }
 
-pub fn stagnation_entropy(T: f64, p: f64) -> f64 {
+pub fn stagnation_entropy(t: f64, p: f64) -> f64 {
     const R: f64 = 287.05287;
     const CP: f64 = 1004.685;
 
-    CP * T.ln() - R * p.ln()
+    CP * t.ln() - R * p.ln()
 }
 
 pub fn prandtl_glauert(mach: f64) -> f64 {
