@@ -105,3 +105,44 @@ pub fn moist_speed_of_sound(t: f64, rh: f64, p: f64) -> f64 {
 
     (gamma_m * r_m * t).sqrt()
 }
+
+/// Virtual potential temperature [K]
+/// θ_v = θ * (1 + 0.61 w)
+pub fn virtual_potential_temperature(t: f64, p: f64, rh: f64) -> f64 {
+    let e = vapor_pressure(t, rh);
+    let w = mixing_ratio(p, e);
+    let theta = potential_temperature(t, p);
+    theta * (1.0 + 0.61 * w)
+}
+
+/// Equivalent potential temperature (Bolton 1980) [K]
+pub fn equivalent_potential_temperature(t: f64, p: f64, rh: f64) -> f64 {
+    const L: f64 = 2.5e6;
+    const CP: f64 = 1004.0;
+
+    let e = vapor_pressure(t, rh);
+    let w = mixing_ratio(p, e);
+
+    // Bolton (1980) LCL temperature
+    let t_c = t - 273.15; // Celsius
+    let rh_clamped = rh.clamp(0.001, 1.0); // avoid ln(0)
+
+    let tlcl_c = 1.0 / (1.0 / (t_c - 55.0) - rh_clamped.ln() / 2840.0) + 55.0;
+    let tlcl = tlcl_c + 273.15; // convert back to Kelvin
+
+    let theta = potential_temperature(t, p);
+    theta * f64::exp((L * w) / (CP * tlcl))
+}
+
+/// Moist static energy [J/kg]
+/// MSE = cp*T + g*z + L*q
+pub fn moist_static_energy(t: f64, p: f64, rh: f64, z: f64) -> f64 {
+    const CP: f64 = 1004.0;
+    const G: f64 = 9.80665;
+    const L: f64 = 2.5e6;
+
+    let e = vapor_pressure(t, rh);
+    let q = mixing_ratio(p, e);
+
+    CP * t + G * z + L * q
+}

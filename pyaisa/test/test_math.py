@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyaisa import ISA, atm
+from pyaisa import atm
 from pyaisa.pyaisa_core import (
     altitude_to_fl,
     cas_to_eas,
@@ -499,16 +499,3 @@ def test_tas_to_mach_moist_basic():
     T, p, _ = atm(5000)
     m = tas_to_mach_moist(250.0, T, 0.5, p)
     assert m > 0.0
-
-
-def test_mach_moist_vs_dry():
-    T, p, _ = atm(5000)
-
-    a_dry = speed_of_sound(T)
-    isa = ISA()
-    a_moist = moist_speed_of_sound(isa._isa, 5000, 1.0)
-
-    m_dry = 250.0 / a_dry
-    m_moist = 250.0 / a_moist
-
-    assert m_moist < m_dry

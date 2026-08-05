@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from pyaisa.constants import isa_params
-from pyaisa.pyaisa_core import ISA as RustISA
+from pyaisa.pyaisa_core import Isa as RustISA
 
 from .functions import (
     altitude_to_fl,
@@ -19,6 +19,7 @@ from .functions import (
     dynamic_viscosity_sutherland,
     eas_to_cas,
     eas_to_tas,
+    equivalent_potential_temperature,
     fl_to_altitude,
     freezing_fraction,
     geometric_to_fl,
@@ -37,6 +38,7 @@ from .functions import (
     moist_air_density,
     moist_lapse_rate,
     moist_speed_of_sound,
+    moist_static_energy,
     potential_temperature,
     prandtl_glauert,
     pressure_altitude,
@@ -51,6 +53,7 @@ from .functions import (
     tas_to_eas,
     tas_to_mach_moist,
     vapor_pressure,
+    virtual_potential_temperature,
     virtual_temperature,
     wet_bulb_temperature,
     wind_ekman,
@@ -398,3 +401,15 @@ class ISA:
     def tas_to_mach_moist(self, h: float, tas: float, rh: float) -> float:
         T, p, _ = self.atm(h)
         return tas_to_mach_moist(tas, T, rh, p)
+
+    def virtual_potential_temperature(self, h: float, rh: float) -> float:
+        T, p, _ = self.atm(h)
+        return virtual_potential_temperature(T, p, rh)
+
+    def equivalent_potential_temperature(self, h: float, rh: float) -> float:
+        T, p, _ = self.atm(h)
+        return equivalent_potential_temperature(T, p, rh)
+
+    def moist_static_energy(self, h: float, rh: float) -> float:
+        T, p, _ = self.atm(h)
+        return moist_static_energy(T, p, rh, h)

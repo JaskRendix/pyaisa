@@ -3,7 +3,7 @@ use crate::layers::{PLayer, TLayer};
 use crate::thermo::moist_air_density;
 use rayon::prelude::*;
 
-/// Core ISA engine (Rust side)
+/// Core Isa engine (Rust side)
 pub struct IsaCore {
     r: f64,
     _g: f64, // unused → prefix with underscore
@@ -18,7 +18,7 @@ pub struct IsaCore {
 }
 
 impl IsaCore {
-    /// Build ISA layer structure
+    /// Build Isa layer structure
     pub fn new(
         r: f64,
         g: f64,
@@ -214,19 +214,19 @@ impl IsaCore {
         (t, p, rho, err)
     }
 
-    /// ISA pressure ratio δ = p / p0
+    /// Isa pressure ratio δ = p / p0
     pub fn delta(&self, h: f64) -> Option<f64> {
         let (_, p, _) = self.atm_scalar(h)?;
         Some(p / self._p0)
     }
 
-    /// ISA temperature ratio θ = T / T0
+    /// Isa temperature ratio θ = T / T0
     pub fn theta(&self, h: f64) -> Option<f64> {
         let (t, _, _) = self.atm_scalar(h)?;
         Some(t / self._t0)
     }
 
-    /// ISA density ratio σ = ρ / ρ0
+    /// Isa density ratio σ = ρ / ρ0
     pub fn sigma(&self, h: f64) -> Option<f64> {
         let (_, _, rho) = self.atm_scalar(h)?;
         let rho0 = self._p0 / (self.r * self._t0);
@@ -254,7 +254,7 @@ impl IsaCore {
         Some((g / t) * (gamma_d - lapse))
     }
 
-    /// ISA deviation reporting: ΔT, Δp, Δρ from standard ISA
+    /// Isa deviation reporting: ΔT, Δp, Δρ from standard Isa
     pub fn isa_deviation(&self, h: f64) -> Option<(f64, f64, f64)> {
         let (t, p, rho) = self.atm_scalar(h)?;
         let t_std = self.tl[0].eval(h);

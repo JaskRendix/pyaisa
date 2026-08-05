@@ -119,7 +119,7 @@ fn freezing_fraction_matches_supercooled_fraction() {
 fn freezing_fraction_bounds() {
     let t = 260.0;
     let ff = freezing_fraction(t);
-    assert!(ff >= 0.0 && ff <= 1.0);
+    assert!((0.0..=1.0).contains(&ff));
 }
 
 #[test]

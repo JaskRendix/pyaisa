@@ -21,20 +21,20 @@ fn get_usize(k: &Bound<'_, PyDict>, name: &str, default: usize) -> usize {
 }
 
 #[pyclass]
-pub struct ISA {
+pub struct Isa {
     core: IsaCore,
     params: Py<PyDict>,
 }
 
 // Rust-only accessor
-impl ISA {
+impl Isa {
     pub fn core(&self) -> &IsaCore {
         &self.core
     }
 }
 
 #[pymethods]
-impl ISA {
+impl Isa {
     #[new]
     fn new(py: Python, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let r = kwargs
@@ -52,7 +52,7 @@ impl ISA {
             k.get_item("layers")
                 .ok()
                 .flatten()
-                .and_then(|obj| obj.downcast::<PyDict>().ok().map(|d| d.clone()))
+                .and_then(|obj| obj.downcast::<PyDict>().ok().cloned())
         });
 
         let (hl, al) = if let Some(ld) = layers {
@@ -68,7 +68,7 @@ impl ISA {
 
             (h_arr.to_vec()?, a_arr.to_vec()?)
         } else {
-            // ICAO ISA default layers
+            // ICAO Isa default layers
             (
                 vec![0.0, 11000.0, 20000.0, 32000.0],
                 vec![-0.0065, 0.0, 0.001],
@@ -81,7 +81,7 @@ impl ISA {
             .map(|k| Py::from(k.to_owned()))
             .unwrap_or_else(|| PyDict::new_bound(py).unbind());
 
-        Ok(ISA { core, params })
+        Ok(Isa { core, params })
     }
 
     #[getter]
@@ -94,11 +94,11 @@ impl ISA {
         // Scalar
         if let Ok(val) = h.extract::<f64>() {
             if let Some((t, p, rho)) = self.core.atm_scalar(val) {
-                return Ok(PyTuple::new_bound(py, &[t, p, rho]).unbind().into());
+                return Ok(PyTuple::new_bound(py, [t, p, rho]).unbind().into());
             }
             let warnings = py.import_bound("warnings")?;
             warnings.call_method1("warn", ("Altitude value outside range",))?;
-            return Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
+            return Ok(PyTuple::new_bound(py, [f64::NAN, f64::NAN, f64::NAN])
                 .unbind()
                 .into());
         }
@@ -142,11 +142,11 @@ impl ISA {
         // Scalar
         if let Ok(val) = h.extract::<f64>() {
             if let Some((t, p, rho)) = self.core.atm_deviation_scalar(val, d_t, dp, drho) {
-                return Ok(PyTuple::new_bound(py, &[t, p, rho]).unbind().into());
+                return Ok(PyTuple::new_bound(py, [t, p, rho]).unbind().into());
             }
             let warnings = py.import_bound("warnings")?;
             warnings.call_method1("warn", ("Altitude value outside range",))?;
-            return Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
+            return Ok(PyTuple::new_bound(py, [f64::NAN, f64::NAN, f64::NAN])
                 .unbind()
                 .into());
         }
@@ -182,17 +182,17 @@ impl ISA {
         self.core.layer_at(h)
     }
 
-    /// ISA pressure ratio δ = p / p0
+    /// Isa pressure ratio δ = p / p0
     fn delta(&self, _py: Python, h: f64) -> Option<f64> {
         self.core.delta(h)
     }
 
-    /// ISA temperature ratio θ = T / T0
+    /// Isa temperature ratio θ = T / T0
     fn theta(&self, _py: Python, h: f64) -> Option<f64> {
         self.core.theta(h)
     }
 
-    /// ISA density ratio σ = ρ / ρ0
+    /// Isa density ratio σ = ρ / ρ0
     fn sigma(&self, _py: Python, h: f64) -> Option<f64> {
         self.core.sigma(h)
     }
@@ -207,14 +207,14 @@ impl ISA {
         self.core.static_stability(h)
     }
 
-    /// ISA deviation ΔT, Δp, Δρ
+    /// Isa deviation ΔT, Δp, Δρ
     fn isa_deviation(&self, py: Python, h: f64) -> PyResult<PyObject> {
         if let Some((d_t, d_p, d_rho)) = self.core.isa_deviation(h) {
-            Ok(PyTuple::new_bound(py, &[d_t, d_p, d_rho]).unbind().into())
+            Ok(PyTuple::new_bound(py, [d_t, d_p, d_rho]).unbind().into())
         } else {
             let warnings = py.import_bound("warnings")?;
             warnings.call_method1("warn", ("Altitude value outside range",))?;
-            Ok(PyTuple::new_bound(py, &[f64::NAN, f64::NAN, f64::NAN])
+            Ok(PyTuple::new_bound(py, [f64::NAN, f64::NAN, f64::NAN])
                 .unbind()
                 .into())
         }

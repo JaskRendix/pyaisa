@@ -31,6 +31,9 @@ Implemented in `thermo.rs`:
 - Wet‑bulb temperature  
 - Moist‑air density  
 - Moist‑air speed of sound  
+- Virtual potential temperature  
+- Equivalent potential temperature  
+- Moist static energy  
 
 ### Aerodynamic and Compressible‑Flow Quantities  
 Implemented in `math.rs`:
@@ -76,6 +79,47 @@ Implemented in `icing.rs`:
 - Supercooled fraction  
 - Icing severity index  
 - Freezing fraction  
+
+---
+
+## Aircraft Performance  
+Implemented in `performance.rs`:
+
+- Drag polar  
+  - `CD = CD0 + k·CL²`
+- Thrust lapse (ISA‑based density ratio)  
+  - `T = T_sl · (ρ / ρ_sl)`
+- Drag force  
+  - `D = q · S · CD`
+- Climb rate  
+  - `RC = (T − D) · V / W`
+- Service ceiling criterion  
+  - `RC ≤ 0.5 m/s`
+
+### Python API (`pyaisa.isa.performance.Performance`)
+
+```python
+perf = pyaisa.Performance()
+
+CD = perf.drag_polar(cd0=0.02, k=0.04, cl=0.5)
+T  = perf.thrust_lapse(thrust_sl=10000, T=288.15, p=101325)
+D  = perf.drag_force(q=500, S=20, CD=0.02)
+RC = perf.climb_rate(thrust=5000, drag=3000, V=100, weight=60000)
+is_ceiling = perf.service_ceiling(RC)
+```
+
+### Typical Usage
+
+```python
+isa = pyaisa.ISA()
+
+T, p, rho = isa.atm(5000)
+q = isa.dynamic_pressure(5000, V=120)
+
+CD = perf.drag_polar(0.02, 0.04, cl=0.5)
+D  = perf.drag_force(q, S=20, CD=CD)
+RC = perf.climb_rate(thrust=4500, drag=D, V=120, weight=60000)
+```
 
 ---
 
@@ -258,6 +302,13 @@ td = isa.dew_point(0, rh=0.6)
 
 ```python
 u = isa.wind_loglaw(z=50, z_ref=10, u_ref=5, z0=0.1)
+```
+
+### Moist Thermodynamics
+
+theta_v = isa.virtual_potential_temperature(5000, rh=0.5)
+theta_e = isa.equivalent_potential_temperature(5000, rh=0.5)
+mse = isa.moist_static_energy(5000, rh=0.5)
 ```
 
 ### Aerodynamic Quantities

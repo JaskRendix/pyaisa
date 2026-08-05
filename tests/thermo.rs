@@ -1,7 +1,7 @@
 use pyaisa_core::thermo::{
-    dew_point, mixing_ratio, moist_air_density, moist_lapse_rate, moist_speed_of_sound,
-    potential_temperature, saturation_vapor_pressure, vapor_pressure, virtual_temperature,
-    wet_bulb_temperature,
+    dew_point, equivalent_potential_temperature, mixing_ratio, moist_air_density, moist_lapse_rate,
+    moist_speed_of_sound, moist_static_energy, potential_temperature, saturation_vapor_pressure,
+    vapor_pressure, virtual_potential_temperature, virtual_temperature, wet_bulb_temperature,
 };
 
 const EPS: f64 = 1e-9;
@@ -163,4 +163,89 @@ fn moist_speed_of_sound_moist_vs_dry() {
     let c_dry = moist_speed_of_sound(300.0, 0.0, 90000.0);
     let c_moist = moist_speed_of_sound(300.0, 1.0, 90000.0);
     assert!(c_moist > c_dry);
+}
+
+#[test]
+fn virtual_potential_temperature_basic() {
+    let t = 300.0;
+    let p = 90000.0;
+    let rh = 0.5;
+
+    let theta_v = virtual_potential_temperature(t, p, rh);
+    let theta = potential_temperature(t, p);
+
+    // Virtual θ must be greater than dry θ
+    assert!(theta_v > theta);
+}
+
+#[test]
+fn virtual_potential_temperature_zero_humidity() {
+    let t = 300.0;
+    let p = 90000.0;
+
+    let theta_v = virtual_potential_temperature(t, p, 0.0);
+    let theta = potential_temperature(t, p);
+
+    assert!((theta_v - theta).abs() < EPS);
+}
+
+#[test]
+fn equivalent_potential_temperature_basic() {
+    let t = 300.0;
+    let p = 90000.0;
+    let rh = 0.5;
+
+    let theta_e = equivalent_potential_temperature(t, p, rh);
+    let theta = potential_temperature(t, p);
+
+    // Equivalent θ must be greater than dry θ
+    assert!(theta_e > theta);
+}
+
+#[test]
+fn equivalent_potential_temperature_increases_with_humidity() {
+    let t = 300.0;
+    let p = 90000.0;
+
+    let theta_e1 = equivalent_potential_temperature(t, p, 0.2);
+    let theta_e2 = equivalent_potential_temperature(t, p, 0.8);
+
+    assert!(theta_e2 > theta_e1);
+}
+
+#[test]
+fn moist_static_energy_basic() {
+    let t = 300.0;
+    let p = 90000.0;
+    let rh = 0.5;
+    let z = 1000.0;
+
+    let mse = moist_static_energy(t, p, rh, z);
+
+    // Must be positive and physically reasonable
+    assert!(mse > 0.0);
+    assert!(mse > 300.0 * 1004.0); // cp*T baseline
+}
+
+#[test]
+fn moist_static_energy_increases_with_height() {
+    let t = 300.0;
+    let p = 90000.0;
+    let rh = 0.5;
+
+    let mse1 = moist_static_energy(t, p, rh, 0.0);
+    let mse2 = moist_static_energy(t, p, rh, 2000.0);
+
+    assert!(mse2 > mse1);
+}
+
+#[test]
+fn moist_static_energy_increases_with_humidity() {
+    let t = 300.0;
+    let p = 90000.0;
+
+    let mse1 = moist_static_energy(t, p, 0.2, 1000.0);
+    let mse2 = moist_static_energy(t, p, 0.8, 1000.0);
+
+    assert!(mse2 > mse1);
 }

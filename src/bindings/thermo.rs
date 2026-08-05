@@ -13,6 +13,9 @@ pub fn thermo_bindings(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(virtual_temperature, m)?)?;
     m.add_function(wrap_pyfunction!(moist_air_density, m)?)?;
     m.add_function(wrap_pyfunction!(moist_speed_of_sound, m)?)?;
+    m.add_function(wrap_pyfunction!(virtual_potential_temperature, m)?)?;
+    m.add_function(wrap_pyfunction!(equivalent_potential_temperature, m)?)?;
+    m.add_function(wrap_pyfunction!(moist_static_energy, m)?)?;
     Ok(())
 }
 
@@ -62,10 +65,25 @@ fn moist_air_density(p: f64, t: f64, rh: f64) -> f64 {
 }
 
 #[pyfunction]
-fn moist_speed_of_sound(isa: &crate::bindings::isa::ISA, h: f64, rh: f64) -> f64 {
+fn moist_speed_of_sound(isa: &crate::bindings::isa::Isa, h: f64, rh: f64) -> f64 {
     let (t, p, _rho) = isa
         .core()
         .atm_scalar(h)
         .unwrap_or((f64::NAN, f64::NAN, f64::NAN));
     thermo::moist_speed_of_sound(t, rh, p)
+}
+
+#[pyfunction]
+fn virtual_potential_temperature(t: f64, p: f64, rh: f64) -> f64 {
+    thermo::virtual_potential_temperature(t, p, rh)
+}
+
+#[pyfunction]
+fn equivalent_potential_temperature(t: f64, p: f64, rh: f64) -> f64 {
+    thermo::equivalent_potential_temperature(t, p, rh)
+}
+
+#[pyfunction]
+fn moist_static_energy(t: f64, p: f64, rh: f64, z: f64) -> f64 {
+    thermo::moist_static_energy(t, p, rh, z)
 }

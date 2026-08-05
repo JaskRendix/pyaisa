@@ -4,7 +4,12 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert
 
 from pyaisa import atm
 from pyaisa.isa.core import ISA
-from pyaisa.pyaisa_core import geometric_to_geopotential, geopotential_to_geometric
+from pyaisa.pyaisa_core import (
+    geometric_to_geopotential,
+    geopotential_to_geometric,
+    moist_speed_of_sound,
+    speed_of_sound,
+)
 
 
 @pytest.mark.parametrize(
@@ -244,3 +249,36 @@ def test_isa_deviation_nonzero():
     assert_almost_equal(T1, T0 + 5.0)
     assert_almost_equal(p1, p0 + 100.0)
     assert_almost_equal(rho1, rho0 + 0.01)
+
+
+def test_mach_moist_vs_dry():
+    T, p, _ = atm(5000)
+
+    a_dry = speed_of_sound(T)
+    isa = ISA()
+    a_moist = moist_speed_of_sound(isa._isa, 5000, 1.0)
+
+    m_dry = 250.0 / a_dry
+    m_moist = 250.0 / a_moist
+
+    assert m_moist < m_dry
+
+
+def test_virtual_potential_temperature():
+    isa = ISA()
+    theta = isa.virtual_potential_temperature(5000, rh=0.5)
+    theta_dry = isa.potential_temperature(5000)
+    assert theta > theta_dry
+
+
+def test_equivalent_potential_temperature():
+    isa = ISA()
+    theta_e = isa.equivalent_potential_temperature(5000, rh=0.5)
+    theta = isa.potential_temperature(5000)
+    assert theta_e > theta
+
+
+def test_moist_static_energy():
+    isa = ISA()
+    mse = isa.moist_static_energy(5000, rh=0.5)
+    assert mse > 0.0
